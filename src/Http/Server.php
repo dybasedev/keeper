@@ -9,7 +9,9 @@
 namespace Dybasedev\Keeper\Http;
 
 
-class Server
+use Dybasedev\Keeper\Server\Server as AbstractServer;
+
+class Server extends AbstractServer
 {
 
 }
