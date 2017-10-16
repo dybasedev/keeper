@@ -1,0 +1,23 @@
+{
+  "name": "dybasedev/keeper",
+  "description": "基于 Swoole 开发的 Server 框架",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "chongyi",
+      "email": "chongyi@xopns.com"
+    }
+  ],
+  "require": {
+    "laravel/framework": "^5.5"
+  },
+  "require-dev": {
+    "eaglewu/swoole-ide-helper": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "Dybasedev\\Keeper\\": "src/"
+    }
+  }
+}
