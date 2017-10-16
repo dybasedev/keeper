@@ -10,16 +10,26 @@ namespace Dybasedev\Keeper\Http;
 
 use Dotenv\Dotenv;
 use Dybasedev\Keeper\Http\Interfaces\ProcessKernel;
-use Dybasedev\Keeper\Http\Standard\ContextContainer;
 use FilesystemIterator;
-use Illuminate\Config\Repository;
+use Illuminate\Config\Repository as IlluminateRepository;
+use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Events\Dispatcher as IlluminateDispatcher;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Routing\Router;
 use SplFileInfo;
-use Swoole\Http\Request;
-use Swoole\Http\Response;
+use Swoole\Http\Request as SwooleRequest;
+use Swoole\Http\Response as SwooleResponse;
 use Swoole\Http\Server as SwooleHttpServer;
+use Illuminate\Http\Request as IlluminateRequest;
+use Symfony\Component\Debug\Exception\FlattenException;
+use Symfony\Component\Debug\ExceptionHandler;
+use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Throwable;
 
 abstract class Kernel implements ProcessKernel
 {
@@ -32,6 +42,21 @@ abstract class Kernel implements ProcessKernel
      * @var array
      */
     protected $moduleProviders = [];
+
+    /**
+     * @var array
+     */
+    protected $middlewareGroups = [];
+
+    /**
+     * @var array
+     */
+    protected $middlewares = [];
+
+    /**
+     * @var array
+     */
+    protected $routeMiddlewares = [];
 
     /**
      * Kernel constructor.
@@ -66,13 +91,13 @@ abstract class Kernel implements ProcessKernel
     /**
      * 载入配置文件
      *
-     * @return Repository
+     * @return IlluminateRepository
      */
     protected function loadConfiguration()
     {
         $this->loadEnvironment();
 
-        $config         = new Repository();
+        $config         = new IlluminateRepository();
         $configurations = new FilesystemIterator($this->container['path.base'] . '/config',
             FilesystemIterator::SKIP_DOTS);
 
@@ -99,7 +124,7 @@ abstract class Kernel implements ProcessKernel
         $this->loadBaseModule();
 
         $moduleProviderInstances = [];
-        $configuration   = $this->container['config'];
+        $configuration           = $this->container['config'];
         foreach ($this->moduleProviders as $module) {
             /** @var ModuleProvider $moduleProviderInstance */
             $moduleProviderInstance = new $module($this->container, $configuration);
@@ -114,11 +139,89 @@ abstract class Kernel implements ProcessKernel
         unset($moduleProviderInstances);
         unset($moduleProviderInstance);
         unset($configuration);
+
+        $router = $this->container['router'];
+        foreach ($this->middlewareGroups as $key => $middleware) {
+            $router->middlewareGroup($key, $middleware);
+        }
+
+        foreach ($this->routeMiddlewares as $key => $middleware) {
+            $router->aliasMiddleware($key, $middleware);
+        }
+
+        unset($router);
+        $this->alias();
     }
 
-    public function process(Request $request, Response $response)
+    public function process(SwooleRequest $request, SwooleResponse $response)
     {
+        try {
+            $illuminateRequest = Request::createFromSwooleRequest($request);
 
+            $this->container->instance(IlluminateRequest::class, $illuminateRequest);
+            $this->container->alias(IlluminateRequest::class, Request::class);
+            $this->container->alias(IlluminateRequest::class, SymfonyRequest::class);
+
+            /** @var Router $router */
+            $router = $this->container->make('router');
+
+            $pipeline           = new Pipeline($this->container);
+            $illuminateResponse = $pipeline->send($illuminateRequest)
+                                           ->through($this->middlewares)
+                                           ->then(function (IlluminateRequest $request) use ($router) {
+                                               return $router->dispatch($request);
+                                           });
+
+            $this->prepareResponse($illuminateResponse)
+                 ->setSwooleResponse($response)
+                 ->send();
+
+            unset($pipeline);
+            unset($router);
+            unset($this->container[IlluminateRequest::class]);
+            unset($illuminateRequest);
+            unset($illuminateResponse);
+
+            gc_collect_cycles();
+        } catch (Throwable $exception) {
+            $statusCode = 500;
+            $headers    = [];
+
+            if ($exception instanceof HttpException) {
+                $statusCode = $exception->getStatusCode();
+                $headers    = $exception->getHeaders();
+            }
+
+            $html = (new ExceptionHandler($this->container['config']->get('global.debug')))->getHtml(FlattenException::create($exception));
+            $this->prepareResponse(new SymfonyResponse($html, $statusCode, $headers))
+                 ->setSwooleResponse($response)
+                 ->send();
+
+            print (string)$exception;
+        }
+    }
+
+    /**
+     * 响应预处理
+     *
+     * @param string|\Symfony\Component\HttpFoundation\Response $response
+     *
+     * @return Response 输出一个 Dybasedev\Keeper\Http\Response 对象
+     */
+    private function prepareResponse($response)
+    {
+        if (!$response instanceof Response) {
+            if ($response instanceof SymfonyResponse) {
+                $response = new Response($response->getContent(), $response->getStatusCode(),
+                    $response->headers->all());
+            } elseif (is_array($response)) {
+                return $this->prepareResponse(new JsonResponse($response));
+            } else {
+                $response = new Response($response);
+            }
+        }
+
+        return $response;
     }
 
     public function destroy(SwooleHttpServer $server, $workerId)
@@ -126,5 +229,18 @@ abstract class Kernel implements ProcessKernel
 
     }
 
+    protected function alias()
+    {
+        $map = [
+            'config' => [Repository::class, IlluminateRepository::class],
+            'router' => [Router::class],
+            'event'  => [Dispatcher::class, IlluminateDispatcher::class],
+        ];
 
+        foreach ($map as $origin => $aliases) {
+            foreach ($aliases as $alias) {
+                $this->container->alias($origin, $alias);
+            }
+        }
+    }
 }

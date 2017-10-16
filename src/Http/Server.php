@@ -44,9 +44,9 @@ class Server extends AbstractServer
             throw new RuntimeException('Unknown process kernel.');
         }
 
-        $server->on('workerStart', [$this, 'init']);
-        $server->on('request', [$this, 'process']);
-        $server->on('workerStop', [$this, 'destroy']);
+        $server->on('workerStart', [$this->handler, 'init']);
+        $server->on('request', [$this->handler, 'process']);
+        $server->on('workerStop', [$this->handler, 'destroy']);
 
         return $server;
     }
