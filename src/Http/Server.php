@@ -9,16 +9,45 @@
 namespace Dybasedev\Keeper\Http;
 
 
+use Dybasedev\Keeper\Http\Interfaces\ProcessKernel;
 use Dybasedev\Keeper\Server\Server as AbstractServer;
+use RuntimeException;
 use Swoole\Http\Server as SwooleHttpServer;
 
 class Server extends AbstractServer
 {
     /**
+     * @var ProcessKernel
+     */
+    protected $handler;
+
+    /**
+     * @param ProcessKernel $handler
+     *
+     * @return Server
+     */
+    public function setHandler(ProcessKernel $handler)
+    {
+        $this->handler = $handler;
+
+        return $this;
+    }
+
+    /**
      * @return SwooleHttpServer
      */
     protected function makeSwooleInstance()
     {
-        return new SwooleHttpServer($this->host, $this->port);
+        $server = new SwooleHttpServer($this->host, $this->port);
+
+        if (!$this->handler) {
+            throw new RuntimeException('Unknown process kernel.');
+        }
+
+        $server->on('workerStart', [$this, 'init']);
+        $server->on('request', [$this, 'process']);
+        $server->on('workerStop', [$this, 'destroy']);
+
+        return $server;
     }
 }

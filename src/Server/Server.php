@@ -29,6 +29,11 @@ abstract class Server
     protected $options = [];
 
     /**
+     * @var SwooleServer|SwooleHttpServer
+     */
+    protected $instance;
+
+    /**
      * Server constructor.
      *
      * @param string $host
@@ -66,4 +71,14 @@ abstract class Server
      * @return SwooleServer|SwooleHttpServer
      */
     abstract protected function makeSwooleInstance();
+
+    /**
+     * @return boolean
+     */
+    public function start()
+    {
+        $this->instance = $this->makeSwooleInstance();
+        $this->instance->set($this->options);
+        return $this->instance->start();
+    }
 }
