@@ -19,6 +19,11 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Routing\Router;
+use InvalidArgumentException;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\AbstractHandler;
+use Monolog\Handler\ErrorLogHandler;
+use Monolog\Logger;
 use SplFileInfo;
 use Swoole\Http\Request as SwooleRequest;
 use Swoole\Http\Response as SwooleResponse;
@@ -33,6 +38,11 @@ use Throwable;
 
 abstract class Kernel implements ProcessKernel
 {
+    const DEFAULT_PATH
+        = [
+            'config' => 'config',
+        ];
+
     /**
      * @var ContextContainer
      */
@@ -72,8 +82,29 @@ abstract class Kernel implements ProcessKernel
 
     protected function registerPath($basePath)
     {
-        $this->container['path.base']   = $basePath;
-        $this->container['path.config'] = $basePath . '/config';
+        $this->container['path.base'] = $basePath;
+        foreach (self::DEFAULT_PATH as $name => $path) {
+            $this->container['path.' . $name] = $basePath . DIRECTORY_SEPARATOR . $path;
+        }
+    }
+
+    /**
+     * 替换默认路径
+     *
+     * @param string $pathName
+     * @param string $path
+     *
+     * @return $this
+     */
+    public function replacePath(string $pathName, string $path)
+    {
+        if (!in_array($pathName, array_keys(self::DEFAULT_PATH))) {
+            throw new InvalidArgumentException();
+        }
+
+        $this->container['path.' . $pathName] = $path;
+
+        return $this;
     }
 
     /**
@@ -114,9 +145,17 @@ abstract class Kernel implements ProcessKernel
 
     protected function loadBaseModule()
     {
-        $this->container->instance('config', $this->loadConfiguration());
+        $this->container->instance('config', $config = $this->loadConfiguration());
         $this->container->instance('event', new IlluminateDispatcher($this->container));
         $this->container->instance('router', new Router($this->container['event'], $this->container));
+        $this->container->instance(
+            'log.handler',
+            (new ErrorLogHandler(ErrorLogHandler::OPERATING_SYSTEM, $config['global.log.level']))->setFormatter(
+                tap(new LineFormatter(null, null, true, true), function (LineFormatter $formatter) {
+                    $formatter->includeStacktraces();
+                }))
+        );
+        $this->container->instance('log', (new Logger('keeper'))->pushHandler($this->container['log.handler']));
     }
 
     public function init(SwooleHttpServer $server, $workerId)
@@ -192,12 +231,13 @@ abstract class Kernel implements ProcessKernel
                 $headers    = $exception->getHeaders();
             }
 
-            $html = (new ExceptionHandler($this->container['config']->get('global.debug')))->getHtml(FlattenException::create($exception));
+            $html
+                = (new ExceptionHandler($this->container['config']->get('global.debug')))->getHtml(FlattenException::create($exception));
             $this->prepareResponse(new SymfonyResponse($html, $statusCode, $headers))
                  ->setSwooleResponse($response)
                  ->send();
 
-            print (string)$exception;
+            $this->container['log']->error((string)$exception);
         }
     }
 
@@ -235,9 +275,11 @@ abstract class Kernel implements ProcessKernel
     protected function alias()
     {
         $map = [
-            'config' => [Repository::class, IlluminateRepository::class],
-            'router' => [Router::class],
-            'event'  => [Dispatcher::class, IlluminateDispatcher::class],
+            'config'      => [Repository::class, IlluminateRepository::class],
+            'router'      => [Router::class],
+            'event'       => [Dispatcher::class, IlluminateDispatcher::class],
+            'log'         => ['logger', Logger::class],
+            'log.handler' => ['logger.handler', AbstractHandler::class],
         ];
 
         foreach ($map as $origin => $aliases) {
