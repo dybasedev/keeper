@@ -93,7 +93,7 @@ abstract class Kernel implements ProcessKernel
      *
      * @return IlluminateRepository
      */
-    protected function loadConfiguration()
+    public function loadConfiguration()
     {
         $this->loadEnvironment();
 
@@ -226,9 +226,12 @@ abstract class Kernel implements ProcessKernel
 
     public function destroy(SwooleHttpServer $server, $workerId)
     {
-
+        $this->container->flush();
     }
 
+    /**
+     * 系统模块别名
+     */
     protected function alias()
     {
         $map = [
