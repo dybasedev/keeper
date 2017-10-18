@@ -9,9 +9,9 @@
 namespace Dybasedev\Keeper\Http\Providers;
 
 use Dybasedev\Keeper\Data\Redis\RedisManager;
-use Dybasedev\Keeper\Http\ModuleProvider;
+use Dybasedev\Keeper\Http\DestructibleModuleProvider;
 
-class RedisProvider extends ModuleProvider
+class RedisProvider extends DestructibleModuleProvider
 {
     public function register()
     {
@@ -31,5 +31,13 @@ class RedisProvider extends ModuleProvider
     {
         //
     }
+
+    public function destroy()
+    {
+        /** @var RedisManager $redis */
+        $redis = $this->container['redis'];
+        $redis->freeConnection();
+    }
+
 
 }

@@ -54,6 +54,11 @@ abstract class Kernel implements ProcessKernel
     protected $moduleProviders = [];
 
     /**
+     * @var DestructibleModuleProvider[]
+     */
+    protected $moduleInstances = [];
+
+    /**
      * @var array
      */
     protected $middlewareGroups = [];
@@ -168,6 +173,11 @@ abstract class Kernel implements ProcessKernel
             /** @var ModuleProvider $moduleProviderInstance */
             $moduleProviderInstance = new $module($this->container, $configuration);
             $moduleProviderInstance->register();
+
+            if ($moduleProviderInstance instanceof DestructibleModuleProvider) {
+                $this->moduleInstances[] = $moduleProviderInstance;
+            }
+
             $moduleProviderInstances[] = $moduleProviderInstance;
         }
 
@@ -266,6 +276,13 @@ abstract class Kernel implements ProcessKernel
 
     public function destroy(SwooleHttpServer $server, $workerId)
     {
+        foreach ($this->moduleInstances as $moduleInstance) {
+            $moduleInstance->destroy();
+        }
+
+        unset($this->moduleInstances);
+        unset($moduleInstance);
+
         $this->container->flush();
     }
 
