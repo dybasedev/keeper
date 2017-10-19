@@ -32,6 +32,8 @@ class SessionProvider extends ModuleProvider
 
             return $session;
         });
+
+        $this->container->alias('session', Manager::class);
     }
 
     public function boot()
