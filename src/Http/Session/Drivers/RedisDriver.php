@@ -10,7 +10,7 @@ namespace Dybasedev\Keeper\Http\Session\Drivers;
 
 
 use Dybasedev\Keeper\Http\Interfaces\SessionDriver;
-use Dybasedev\Keeper\Http\Session\Context;
+use Dybasedev\Keeper\Http\Session\Session;
 use Redis;
 
 class RedisDriver implements SessionDriver
@@ -34,6 +34,10 @@ class RedisDriver implements SessionDriver
 
     public function find($sessionId)
     {
+        if (empty($sessionId)) {
+            return null;
+        }
+
         if ($this->redisConnection->exists($key = $this->sessionKey($sessionId))) {
             return unserialize($this->redisConnection->get(self::REDIS_KEY_PREFIX . $sessionId));
         }
@@ -46,9 +50,13 @@ class RedisDriver implements SessionDriver
         return self::REDIS_KEY_PREFIX . $sessionId;
     }
 
-    public function store($sessionId, Context $context, int $lifetime = null)
+    public function store($sessionId, $data, int $lifetime = null)
     {
-        return $this->redisConnection->setex($this->sessionKey($sessionId), $lifetime, serialize($context));
+        if (empty($sessionId)) {
+            return false;
+        }
+
+        return $this->redisConnection->setex($this->sessionKey($sessionId), $lifetime, serialize($data));
     }
 
 }

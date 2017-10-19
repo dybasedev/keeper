@@ -10,12 +10,12 @@ namespace Dybasedev\Keeper\Http\Providers;
 
 
 use Dybasedev\Keeper\Data\Redis\RedisManager;
-use Dybasedev\Keeper\Http\DestructibleModuleProvider;
+use Dybasedev\Keeper\Http\ModuleProvider;
 use Dybasedev\Keeper\Http\Session\Drivers\RedisDriver;
 use Dybasedev\Keeper\Http\Session\Manager;
 use Illuminate\Contracts\Container\Container;
 
-class SessionProvider extends DestructibleModuleProvider
+class SessionProvider extends ModuleProvider
 {
     public function register()
     {
@@ -28,7 +28,7 @@ class SessionProvider extends DestructibleModuleProvider
 
         $this->container->singleton('session', function (Container $container) {
             $session = new Manager($this->config['session'],
-                $container->make('session.driver.' . $this->config->get('session.driver', 'redis')));
+                $container->make('session.driver.' . $this->config->get('session.driver', 'redis')), $container);
 
             return $session;
         });
@@ -38,11 +38,5 @@ class SessionProvider extends DestructibleModuleProvider
     {
 
     }
-
-    public function destroy()
-    {
-        //
-    }
-
 
 }

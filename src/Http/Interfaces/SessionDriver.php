@@ -9,11 +9,11 @@
 namespace Dybasedev\Keeper\Http\Interfaces;
 
 
-use Dybasedev\Keeper\Http\Session\Context;
+use Dybasedev\Keeper\Http\Session\Session;
 
 interface SessionDriver
 {
     public function find($sessionId);
 
-    public function store($sessionId, Context $context, int $lifetime = null);
+    public function store($sessionId, $data, int $lifetime = null);
 }
