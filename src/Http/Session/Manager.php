@@ -12,6 +12,7 @@ namespace Dybasedev\Keeper\Http\Session;
 use Dybasedev\Keeper\Http\Interfaces\SessionDriver;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class Manager
 {
@@ -59,6 +60,15 @@ class Manager
             $request = $this->container['request'];
         }
 
-        $this->driver->store($request->cookie($this->config['session.cookie']), $data, $this->config['session.expire']);
+        if (!($sessionId = $request->cookie($this->config['session.cookie']))) {
+            $sessionId = $this->generateSessionId();
+        }
+
+        $this->driver->store($sessionId, $data, $this->config['session.expire']);
+    }
+
+    public function generateSessionId()
+    {
+        return Str::random(40);
     }
 }
