@@ -8,14 +8,7 @@
 
 namespace Dybasedev\Keeper\Http\Session;
 
-
-use Closure;
 use Dybasedev\Keeper\Http\Interfaces\SessionDriver;
-use Illuminate\Contracts\Container\Container;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Monolog\Logger;
-use SplObjectStorage;
 
 class Manager
 {
