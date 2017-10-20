@@ -28,7 +28,7 @@ class SessionProvider extends ModuleProvider
 
         $this->container->singleton('session', function (Container $container) {
             $session = new Manager($this->config['session'],
-                $container->make('session.driver.' . $this->config->get('session.driver', 'redis')), $container);
+                $container->make('session.driver.' . $this->config->get('session.driver', 'redis')));
 
             return $session;
         });

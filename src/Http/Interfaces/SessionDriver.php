@@ -16,4 +16,6 @@ interface SessionDriver
     public function find($sessionId);
 
     public function store($sessionId, $data, int $lifetime = null);
+
+    public function has($sessionId);
 }

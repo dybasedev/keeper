@@ -160,11 +160,13 @@ abstract class Kernel implements ProcessKernel
                     $formatter->includeStacktraces();
                 }))
         );
-        $this->container->instance('log', (new Logger('keeper'))->pushHandler($this->container['log.handler']));
+        $this->container->instance('log',
+            (new Logger('keeper#' . $this->container['worker.id']))->pushHandler($this->container['log.handler']));
     }
 
     public function init(SwooleHttpServer $server, $workerId)
     {
+        $this->container['worker.id'] = $workerId;
         $this->loadBaseModule();
 
         $moduleProviderInstances = [];
@@ -208,6 +210,7 @@ abstract class Kernel implements ProcessKernel
             $illuminateRequest = Request::createFromSwooleRequest($request);
 
             $this->container->instance(IlluminateRequest::class, $illuminateRequest);
+            $this->container->alias(IlluminateRequest::class, 'request');
             $this->container->alias(IlluminateRequest::class, Request::class);
             $this->container->alias(IlluminateRequest::class, SymfonyRequest::class);
 

@@ -59,4 +59,14 @@ class RedisDriver implements SessionDriver
         return $this->redisConnection->setex($this->sessionKey($sessionId), $lifetime, serialize($data));
     }
 
+    /**
+     * @param $sessionId
+     *
+     * @return bool
+     */
+    public function has($sessionId)
+    {
+        return $this->redisConnection->exists($this->sessionKey($sessionId));
+    }
+
 }

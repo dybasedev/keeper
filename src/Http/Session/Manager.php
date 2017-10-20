@@ -9,10 +9,13 @@
 namespace Dybasedev\Keeper\Http\Session;
 
 
+use Closure;
 use Dybasedev\Keeper\Http\Interfaces\SessionDriver;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Monolog\Logger;
+use SplObjectStorage;
 
 class Manager
 {
@@ -27,48 +30,54 @@ class Manager
     protected $driver;
 
     /**
-     * @var Container
+     * @var
      */
-    protected $container;
+    protected $currentSessionId;
 
     /**
      * Manager constructor.
      *
      * @param array         $config
      * @param SessionDriver $driver
-     * @param Container     $container
      */
-    public function __construct(array $config, SessionDriver $driver, Container $container)
+    public function __construct(array $config, SessionDriver $driver)
     {
         $this->config = $config;
         $this->driver = $driver;
-        $this->container = $container;
     }
 
-    public function getSessionData(Request $request = null)
+    public function get()
     {
-        if (is_null($request)) {
-            $request = $this->container['request'];
+        if ($this->has()) {
+            return $this->driver->find($this->currentSessionId);
         }
-        
-        return $this->driver->find($request->cookie($this->config['session.cookie']));
+
+        return null;
     }
 
-    public function setSessionData($data, Request $request = null)
+    public function has()
     {
-        if (is_null($request)) {
-            $request = $this->container['request'];
-        }
-
-        if (!($sessionId = $request->cookie($this->config['session.cookie']))) {
-            $sessionId = $this->generateSessionId();
-        }
-
-        $this->driver->store($sessionId, $data, $this->config['session.expire']);
+        return $this->driver->has($this->currentSessionId);
     }
 
-    public function generateSessionId()
+    public function set($data)
     {
-        return Str::random(40);
+        $this->driver->store($this->currentSessionId, $data, $this->config['lifetime']);
+    }
+
+    public function openSession($sessionId)
+    {
+        if ($this->currentSessionId) {
+            $this->currentSessionId = null;
+            return false;
+        }
+
+        $this->currentSessionId = $sessionId;
+        return true;
+    }
+
+    public function closeSession()
+    {
+        $this->currentSessionId = null;
     }
 }
