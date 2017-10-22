@@ -22,6 +22,11 @@ class BaseStatement
     protected $structure = [];
 
     /**
+     * @var array
+     */
+    protected $bindings = [];
+
+    /**
      * @param string|Expression $table
      *
      * @return $this
@@ -31,5 +36,23 @@ class BaseStatement
         $this->table = $table;
 
         return $this;
+    }
+
+    protected function addStatementStructure($type, $structure, $bindings = null)
+    {
+        $this->structure[$type] = $structure;
+        $this->bindings[$type] = $bindings;
+
+        return $this;
+    }
+
+    public function buildSql()
+    {
+
+    }
+
+    public function getBindings()
+    {
+
     }
 }

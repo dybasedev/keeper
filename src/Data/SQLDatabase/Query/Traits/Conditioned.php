@@ -9,6 +9,8 @@
 namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Traits;
 
 
+use Closure;
+
 trait Conditioned
 {
     public function where($columnOrWheres, $operatorOrValue = null, $value = null, $logical = 'and')
@@ -25,11 +27,29 @@ trait Conditioned
             return $this;
         }
 
+        if ($columnOrWheres instanceof Closure) {
+            return $this->whereNested($columnOrWheres, $logical);
+        }
+
         $this->addStatementStructure('where', [
-            'column'   => $columnOrWheres,
-            'operator' => $operatorOrValue,
-            'value'    => $value,
-            'logical'  => $logical,
+            'type'    => 'condition',
+            'logical' => $logical,
+            'body'    => [
+                'column'   => $columnOrWheres,
+                'operator' => $operatorOrValue,
+                'value'    => '?',
+            ],
+        ], $value);
+
+        return $this;
+    }
+
+    public function whereNested(Closure $nested, $logical)
+    {
+        $this->addStatementStructure('where', [
+            'type'    => 'nested',
+            'logical' => $logical,
+            'body'    => $nested,
         ]);
 
         return $this;
