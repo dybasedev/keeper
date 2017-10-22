@@ -41,7 +41,9 @@ class BaseStatement
     protected function addStatementStructure($key, $type, $structure = null, $bindings = null)
     {
         $this->structure[$key][] = [$type, $structure];
-        $this->bindings[$key][]  = $bindings;
+        if (!in_array($type, ['nested-open', 'nested-close'])) {
+            $this->bindings[$key][]  = $bindings;
+        }
 
         return $this;
     }
