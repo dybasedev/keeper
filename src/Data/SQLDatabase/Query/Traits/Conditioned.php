@@ -15,8 +15,8 @@ trait Conditioned
 {
     public function where($columnOrWheres, $operatorOrValue = null, $value = null, $logical = 'and')
     {
-        if (is_null($value)) {
-            return $this->where($columnOrWheres, '=', $value);
+        if ($columnOrWheres instanceof Closure) {
+            return $this->whereNested($columnOrWheres, $logical);
         }
 
         if (is_array($columnOrWheres)) {
@@ -27,12 +27,11 @@ trait Conditioned
             return $this;
         }
 
-        if ($columnOrWheres instanceof Closure) {
-            return $this->whereNested($columnOrWheres, $logical);
+        if (is_null($value)) {
+            return $this->where($columnOrWheres, '=', $operatorOrValue);
         }
 
-        $this->addStatementStructure('where', [
-            'type'    => 'condition',
+        $this->addStatementStructure('where', 'condition', [
             'logical' => $logical,
             'body'    => [
                 'column'   => $columnOrWheres,
@@ -46,11 +45,13 @@ trait Conditioned
 
     public function whereNested(Closure $nested, $logical)
     {
-        $this->addStatementStructure('where', [
-            'type'    => 'nested',
+        $this->addStatementStructure('where', 'nested-open', [
             'logical' => $logical,
-            'body'    => $nested,
         ]);
+
+        $nested($this);
+
+        $this->addStatementStructure('where', 'nested-close');
 
         return $this;
     }
@@ -60,5 +61,5 @@ trait Conditioned
         return $this->where($columnOrWheres, $operatorOrValue, $value, 'or');
     }
 
-    abstract protected function addStatementStructure($key, $structure, $bindings = null);
+    abstract protected function addStatementStructure($key, $type, $structure = null, $bindings = null);
 }
