@@ -38,6 +38,9 @@ class BaseStatement
         return $this;
     }
 
+
+    protected $grammar;
+
     protected function addStatementStructure($key, $type, $structure = null, $bindings = null)
     {
         $this->structure[$key][] = [$type, $structure];

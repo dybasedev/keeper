@@ -13,6 +13,14 @@ use Closure;
 
 trait Conditioned
 {
+    /**
+     * @param        $columnOrWheres
+     * @param null   $operatorOrValue
+     * @param null   $value
+     * @param string $logical
+     *
+     * @return $this
+     */
     public function where($columnOrWheres, $operatorOrValue = null, $value = null, $logical = 'and')
     {
         if ($columnOrWheres instanceof Closure) {
@@ -43,7 +51,13 @@ trait Conditioned
         return $this;
     }
 
-    public function whereNested(Closure $nested, $logical)
+    /**
+     * @param Closure $nested
+     * @param         $logical
+     *
+     * @return $this
+     */
+    public function whereNested(Closure $nested, $logical = 'and')
     {
         $this->addStatementStructure('where', 'nested-open', [
             'logical' => $logical,
@@ -56,6 +70,23 @@ trait Conditioned
         return $this;
     }
 
+    /**
+     * @param Closure $nested
+     *
+     * @return $this
+     */
+    public function orWhereNested(Closure $nested)
+    {
+        return $this->whereNested($nested, 'or');
+    }
+
+    /**
+     * @param      $columnOrWheres
+     * @param null $operatorOrValue
+     * @param null $value
+     *
+     * @return $this
+     */
     public function orWhere($columnOrWheres, $operatorOrValue = null, $value = null)
     {
         return $this->where($columnOrWheres, $operatorOrValue, $value, 'or');
