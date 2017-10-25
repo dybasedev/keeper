@@ -92,5 +92,5 @@ trait Conditioned
         return $this->where($columnOrWheres, $operatorOrValue, $value, 'or');
     }
 
-    abstract protected function addStatementStructure($key, $type, $structure = null, $bindings = null);
+    abstract protected function addStatementStructure($key, $command, $parameters = null, $bindings = null);
 }
