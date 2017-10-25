@@ -6,11 +6,13 @@
  * @link      https://insp.top
  */
 
-namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Traits;
+namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Traits;
 
 
 trait Joinable
 {
+    use Base, NeedTable;
+
     public function leftJoin($table, $condition, $operatorOrTarget = null, $target = null)
     {
         return $this->join($table, $condition, $operatorOrTarget, $target, 'left');
@@ -32,6 +34,4 @@ trait Joinable
 
         return $this;
     }
-
-    abstract protected function addStatementStructure($key, $type, $structure = null, $bindings = null);
 }

@@ -9,6 +9,8 @@
 namespace Dybasedev\Keeper\Data\SQLDatabase\Query;
 
 
+use Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Base;
+
 class Expression
 {
     protected $expression;
@@ -20,6 +22,10 @@ class Expression
      */
     public function __construct($expression)
     {
+        if ($expression instanceof Base) {
+            $expression = $expression->buildSql();
+        }
+
         $this->expression = $expression;
     }
 

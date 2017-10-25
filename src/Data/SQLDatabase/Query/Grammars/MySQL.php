@@ -10,52 +10,30 @@ namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Grammars;
 
 use Dybasedev\Keeper\Data\SQLDatabase\Query\Grammar;
 
-class MySQLGrammar extends Grammar
+class MySQL extends Grammar
 {
-    protected $supportCommands = [];
 
-    /**
-     * MySQLGrammar constructor.
-     *
-     * @param array $structures
-     */
-    public function __construct(array $structures)
+    protected function registerStructureCompileCommands()
     {
-        parent::__construct($structures);
-
-        $this->registerStructureCompileCommands();
-    }
-
-    private function registerStructureCompileCommands()
-    {
+        $this->supportCommands['table']        = $this->compileTable();
         $this->supportCommands['condition']    = $this->compileWhere();
         $this->supportCommands['nested-open']  = $this->compileNestedOpen();
         $this->supportCommands['nested-close'] = $this->compileNestedClose();
     }
 
-    public function compileStructure($index, $command, $parameters = null, array $previous = null)
-    {
-        if (!isset($this->supportCommands[$command])) {
-            throw new \InvalidArgumentException();
-        }
-
-        return ($this->supportCommands[$command])($index, $parameters, $previous);
-    }
-
     protected function compileWhere()
     {
         return function ($index, $parameters, $previous) {
-            $body = sprintf("%s %s %s", $parameters['body']['column'], $parameters['body']['operator'],
+            $body = sprintf("%s %s %s", $this->wrapField($parameters['body']['column']), $parameters['body']['operator'],
                 $parameters['body']['value']);
 
             $command = null;
             if (is_array($previous)) {
-                list(, $command, , ) = $previous;
+                list(, $command, ,) = $previous;
             }
 
             if ($index != 0 && $command !== 'nested-open') {
-                yield $parameters['logical'];
-                yield $body;
+                yield from [$parameters['logical'], $body];
             } else {
                 yield $body;
             }
@@ -67,12 +45,11 @@ class MySQLGrammar extends Grammar
         return function ($index, $parameters, $previous) {
             $command = null;
             if (is_array($previous)) {
-                list(, $command, , ) = $previous;
+                list(, $command, ,) = $previous;
             }
 
             if ($index != 0 && $command !== 'nested-open') {
-                yield $parameters['logical'];
-                yield '(';
+                yield from [$parameters['logical'], '('];
             } else {
                 yield '(';
             }
@@ -83,6 +60,31 @@ class MySQLGrammar extends Grammar
     {
         return function () {
             return ')';
+        };
+    }
+
+    protected function compileJoin()
+    {
+        return function () {
+
+        };
+    }
+
+    protected function compileTable()
+    {
+        return function ($index, $parameters) {
+            if ($parameters['alias']) {
+                return "( {$parameters['table']} ) as {$this->wrapField($parameters['alias'])}";
+            }
+
+            return $this->wrapField($parameters['table']);
+        };
+    }
+
+    protected function compileSelect()
+    {
+        return function ($index, $parameters) {
+
         };
     }
 }

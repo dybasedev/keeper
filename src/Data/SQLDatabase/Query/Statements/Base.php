@@ -1,17 +1,17 @@
 <?php
 /**
- * BaseStatement.php
+ * Base.php
  *
  * @copyright Chongyi <xpz3847878@163.com>
  * @link      https://insp.top
  */
 
-namespace Dybasedev\Keeper\Data\SQLDatabase\Query;
+namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Statements;
 
 
-use Dybasedev\Keeper\Data\SQLDatabase\Query\Grammars\MySQLGrammar;
+use Dybasedev\Keeper\Data\SQLDatabase\Query\Expression;
 
-class BaseStatement
+class Base
 {
     /**
      * @var string|Expression
@@ -46,16 +46,19 @@ class BaseStatement
     protected function addStatementStructure($key, $command, $parameters = null, $bindings = null)
     {
         $this->structure[$key][] = [$command, $parameters];
-        if (!in_array($command, ['nested-open', 'nested-close'])) {
+        if (!in_array($command, ['nested-open', 'nested-close', 'table'])) {
             $this->bindings[$key][]  = $bindings;
         }
 
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function buildSql()
     {
-        return (new MySQLGrammar($this->structure))->compile();
+        return '';
     }
 
     public function getBindings()

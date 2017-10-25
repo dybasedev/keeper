@@ -6,18 +6,21 @@
  * @link      https://insp.top
  */
 
-namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Traits;
+namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Traits;
 
 
 use Closure;
+use Dybasedev\Keeper\Data\SQLDatabase\Query\Expression;
 
 trait Conditioned
 {
+    use Base, NeedTable;
+
     /**
-     * @param        $columnOrWheres
-     * @param null   $operatorOrValue
-     * @param null   $value
-     * @param string $logical
+     * @param                  $columnOrWheres
+     * @param null             $operatorOrValue
+     * @param mixed|Expression $value
+     * @param string           $logical
      *
      * @return $this
      */
@@ -44,7 +47,7 @@ trait Conditioned
             'body'    => [
                 'column'   => $columnOrWheres,
                 'operator' => $operatorOrValue,
-                'value'    => '?',
+                'value'    => $value instanceof Expression ? $value->getExpression() : '?',
             ],
         ], $value);
 
@@ -91,6 +94,4 @@ trait Conditioned
     {
         return $this->where($columnOrWheres, $operatorOrValue, $value, 'or');
     }
-
-    abstract protected function addStatementStructure($key, $command, $parameters = null, $bindings = null);
 }

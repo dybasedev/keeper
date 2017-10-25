@@ -11,7 +11,14 @@ namespace Dybasedev\Keeper\Data\SQLDatabase\Query;
 
 abstract class Grammar
 {
+    const TYPE_SELECT = 'select';
+    const TYPE_DELETE = 'delete';
+    const TYPE_UPDATE = 'update';
+    const TYPE_INSERT = 'insert';
+
     protected $structures = [];
+
+    protected $supportCommands = [];
 
     /**
      * Grammar constructor.
@@ -21,6 +28,18 @@ abstract class Grammar
     public function __construct(array $structures)
     {
         $this->structures = $structures;
+        $this->registerStructureCompileCommands();
+    }
+
+    abstract protected function registerStructureCompileCommands();
+
+    public function compileStructure($index, $command, $parameters = null, array $previous = null)
+    {
+        if (!isset($this->supportCommands[$command])) {
+            throw new \InvalidArgumentException();
+        }
+
+        return ($this->supportCommands[$command])($index, $parameters, $previous);
     }
 
     public function compile()
@@ -49,6 +68,40 @@ abstract class Grammar
         return $compiles;
     }
 
+    /**
+     * @param string $statementType
+     *
+     * @return string
+     */
+    public function exportSql(string $statementType)
+    {
+        $result    = $this->compile();
+        $statement = null;
+
+        switch ($statementType) {
+            case self::TYPE_SELECT:
+                $statement = $this->buildSelectStatement($result);
+        }
+
+        return $statement;
+    }
+
+    public function buildSelectStatement(array $compiledStructures)
+    {
+        $compiledStructures['select'] = $compiledStructures['select'] ?? '*';
+
+        $statement = "select {$compiledStructures['select']}";
+        if (isset($compiledStructures['table'])) {
+            $statement .= " from {$compiledStructures['table']}";
+        }
+
+        if (isset($compiledStructures['where'])) {
+            $statement .= " where {$compiledStructures['where']}";
+        }
+
+        return $statement;
+    }
+
     public function wrapField($field, $table = null)
     {
         if ($field !== '*') {
@@ -66,5 +119,4 @@ abstract class Grammar
         return $field;
     }
 
-    abstract public function compileStructure($index, $command, $parameters = null, array $previous = null);
 }
