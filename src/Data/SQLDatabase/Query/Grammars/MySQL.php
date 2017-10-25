@@ -8,6 +8,7 @@
 
 namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Grammars;
 
+use Dybasedev\Keeper\Data\SQLDatabase\Query\Expression;
 use Dybasedev\Keeper\Data\SQLDatabase\Query\Grammar;
 
 class MySQL extends Grammar
@@ -24,7 +25,8 @@ class MySQL extends Grammar
     protected function compileWhere()
     {
         return function ($index, $parameters, $previous) {
-            $body = sprintf("%s %s %s", $this->wrapField($parameters['body']['column']), $parameters['body']['operator'],
+            $body = sprintf("%s %s %s", $this->wrapField($parameters['body']['column']),
+                $parameters['body']['operator'],
                 $parameters['body']['value']);
 
             $command = null;
@@ -77,7 +79,9 @@ class MySQL extends Grammar
                 return "( {$parameters['table']} ) as {$this->wrapField($parameters['alias'])}";
             }
 
-            return $this->wrapField($parameters['table']);
+            return $parameters['table'] instanceof Expression
+                ? "( {$parameters['table']->getExpression()} )"
+                : $this->wrapField($parameters['table']);
         };
     }
 

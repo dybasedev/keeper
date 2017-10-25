@@ -8,10 +8,9 @@
 
 namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Traits;
 
-
-use Dybasedev\Keeper\Data\SQLDatabase\Query\AliasExpression;
+use Dybasedev\Keeper\Data\SQLDatabase\Query\Expression;
 use Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Base as BaseStatement;
-use Illuminate\Support\Str;
+use Dybasedev\Keeper\Data\SQLDatabase\Query\AliasExpression;
 
 trait NeedTable
 {
@@ -25,8 +24,7 @@ trait NeedTable
         }
 
         if ($table instanceof BaseStatement) {
-            $actualTable = 'alias_' . Str::random(6);
-            $table       = $table->buildSql();
+            $table = new Expression($table);
         }
 
         if ($alias) {
