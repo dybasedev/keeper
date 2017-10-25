@@ -15,6 +15,7 @@ abstract class Grammar
     const TYPE_DELETE = 'delete';
     const TYPE_UPDATE = 'update';
     const TYPE_INSERT = 'insert';
+    const TYPE_JOIN   = 'join';
 
     protected $structures = [];
 
@@ -81,6 +82,9 @@ abstract class Grammar
         switch ($statementType) {
             case self::TYPE_SELECT:
                 $statement = $this->buildSelectStatement($result);
+                break;
+            case self::TYPE_JOIN:
+                $statement = $this->buildJoinStatement($result);
         }
 
         return $statement;
@@ -95,11 +99,21 @@ abstract class Grammar
             $statement .= " from {$compiledStructures['table']}";
         }
 
+        if (isset($compiledStructures['join'])) {
+            $statement .= ' ' . $compiledStructures['join'];
+        }
+
         if (isset($compiledStructures['where'])) {
             $statement .= " where {$compiledStructures['where']}";
         }
 
         return $statement;
+    }
+
+    public function buildJoinStatement(array $compiledStructures)
+    {
+        return sprintf("%s %s on %s", $compiledStructures['join-mode'], $compiledStructures['join'],
+            $compiledStructures['join-on']);
     }
 
     public function wrapField($field, $table = null)

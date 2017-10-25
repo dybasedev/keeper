@@ -10,6 +10,8 @@ namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Statements;
 
 
 use Dybasedev\Keeper\Data\SQLDatabase\Query\Expression;
+use Dybasedev\Keeper\Data\SQLDatabase\Query\Grammars\MySQL;
+use Illuminate\Support\Arr;
 
 class Base
 {
@@ -29,6 +31,11 @@ class Base
     protected $bindings = [];
 
     /**
+     * @var Base
+     */
+    protected $parentStatement;
+
+    /**
      * @param string|Expression $table
      *
      * @return $this
@@ -40,16 +47,23 @@ class Base
         return $this;
     }
 
-
     protected $grammar;
 
-    protected function addStatementStructure($key, $command, $parameters = null, $bindings = null)
+    public function addStatementStructure($key, $command, $parameters = null, $bindings = null)
     {
-        $this->structure[$key][] = [$command, $parameters];
-        if (!in_array($command, ['nested-open', 'nested-close', 'table'])) {
+        $this->addStatementStructureWithoutBindings($key, $command, $parameters);
+        if (is_array($bindings)) {
+            $this->bindings[$key] = array_merge($this->bindings[$key] ?? [], $bindings);
+        } else {
             $this->bindings[$key][]  = $bindings;
         }
 
+        return $this;
+    }
+
+    public function addStatementStructureWithoutBindings($key, $command, $parameters = null)
+    {
+        $this->structure[$key][] = [$command, $parameters];
         return $this;
     }
 
@@ -61,8 +75,28 @@ class Base
         return '';
     }
 
-    public function getBindings()
+    public function getBindings($flat = false)
     {
+        if ($flat) {
+            return Arr::flatten($this->bindings);
+        }
+
         return $this->bindings;
+    }
+
+    public function getGrammar()
+    {
+        return new MySQL($this->structure);
+    }
+
+    public function hasParentStatement()
+    {
+        return !is_null($this->parentStatement);
+    }
+
+    public function withParentStatement($statement)
+    {
+        $this->parentStatement = $statement;
+        return $this;
     }
 }

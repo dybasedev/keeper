@@ -20,6 +20,9 @@ class MySQL extends Grammar
         $this->supportCommands['condition']    = $this->compileWhere();
         $this->supportCommands['nested-open']  = $this->compileNestedOpen();
         $this->supportCommands['nested-close'] = $this->compileNestedClose();
+        $this->supportCommands['join']         = $this->compileJoinClause();
+        $this->supportCommands['join-on']      = $this->compileJoinOn();
+        $this->supportCommands['statement']    = $this->compileStatement();
     }
 
     protected function compileWhere()
@@ -67,7 +70,7 @@ class MySQL extends Grammar
 
     protected function compileJoin()
     {
-        return function () {
+        return function ($index, $parameters) {
 
         };
     }
@@ -89,6 +92,46 @@ class MySQL extends Grammar
     {
         return function ($index, $parameters) {
 
+        };
+    }
+
+    protected function compileStatement()
+    {
+        return function ($index, $parameters) {
+            return $parameters['statement'];
+        };
+    }
+
+    protected function compileJoinClause()
+    {
+        return function ($index, $parameters) {
+            switch ($parameters['type']) {
+                case 'right-join':
+                case 'left-join':
+                case 'inner-join':
+                    return str_replace('-', ' ', $parameters['type']);
+                default:
+                    return $parameters['type'];
+            }
+        };
+    }
+
+    protected function compileJoinOn()
+    {
+        return function ($index, $parameters, $previous) {
+            $body = sprintf("%s %s %s", $this->wrapField($parameters['condition']), $parameters['operator'],
+                $this->wrapField($parameters['target']));
+
+            $command = null;
+            if (is_array($previous)) {
+                list(, $command, ,) = $previous;
+            }
+
+            if ($index != 0 && $command !== 'nested-open') {
+                yield from [$parameters['logical'], $body];
+            } else {
+                yield $body;
+            }
         };
     }
 }

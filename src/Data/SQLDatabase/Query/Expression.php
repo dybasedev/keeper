@@ -16,6 +16,11 @@ class Expression
     protected $expression;
 
     /**
+     * @var Base
+     */
+    public $statement;
+
+    /**
      * Expression constructor.
      *
      * @param $expression
@@ -23,7 +28,8 @@ class Expression
     public function __construct($expression)
     {
         if ($expression instanceof Base) {
-            $expression = $expression->buildSql();
+            $this->statement = $expression;
+            $expression      = $expression->buildSql();
         }
 
         $this->expression = $expression;

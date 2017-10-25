@@ -12,4 +12,5 @@ namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Traits;
 trait Base
 {
     abstract protected function addStatementStructure($key, $command, $parameters = null, $bindings = null);
+    abstract protected function addStatementStructureWithoutBindings($key, $command, $parameters = null);
 }

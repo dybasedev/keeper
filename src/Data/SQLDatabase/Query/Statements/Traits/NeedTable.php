@@ -19,19 +19,30 @@ trait NeedTable
     public function table($table, $alias = null)
     {
         if ($table instanceof AliasExpression) {
+            if ($table->statement instanceof Base) {
+                $bindings = $table->statement->getBindings(true);
+            }
+
             $actualTable = $table->getAlias();
             $table       = $table->getExpressionWithoutAlias();
         }
 
         if ($table instanceof BaseStatement) {
-            $table = new Expression($table);
+            $bindings = $table->getBindings(true);
+            $table    = new Expression($table);
         }
 
         if ($alias) {
             $actualTable = $alias;
         }
 
-        $this->addStatementStructure('table', 'table', ['table' => $table, 'alias' => $actualTable ?? null]);
+        if (isset($bindings) && count($bindings)) {
+            $this->addStatementStructure('table', 'table', ['table' => $table, 'alias' => $actualTable ?? null],
+                $bindings);
+        } else {
+            $this->addStatementStructureWithoutBindings('table', 'table',
+                ['table' => $table, 'alias' => $actualTable ?? null]);
+        }
 
         return $this;
     }

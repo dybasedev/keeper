@@ -62,13 +62,13 @@ trait Conditioned
      */
     public function whereNested(Closure $nested, $logical = 'and')
     {
-        $this->addStatementStructure('where', 'nested-open', [
+        $this->addStatementStructureWithoutBindings('where', 'nested-open', [
             'logical' => $logical,
         ]);
 
         $nested($this);
 
-        $this->addStatementStructure('where', 'nested-close');
+        $this->addStatementStructureWithoutBindings('where', 'nested-close');
 
         return $this;
     }

@@ -9,12 +9,12 @@
 namespace Dybasedev\Keeper\Data\SQLDatabase\Query\Statements;
 
 use Dybasedev\Keeper\Data\SQLDatabase\Query\Grammar;
-use Dybasedev\Keeper\Data\SQLDatabase\Query\Grammars\MySQL;
 use Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Traits\Conditioned;
+use Dybasedev\Keeper\Data\SQLDatabase\Query\Statements\Traits\Joinable;
 
 class Select extends Base
 {
-    use Conditioned;
+    use Conditioned, Joinable;
 
     public function select($columns = ['*'])
     {
@@ -23,6 +23,6 @@ class Select extends Base
 
     public function buildSql()
     {
-        return (new MySQL($this->structure))->exportSql(Grammar::TYPE_SELECT);
+        return $this->getGrammar()->exportSql(Grammar::TYPE_SELECT);
     }
 }
