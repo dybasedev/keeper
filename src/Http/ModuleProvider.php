@@ -15,7 +15,7 @@ use Illuminate\Contracts\Container\Container;
 abstract class ModuleProvider
 {
     /**
-     * @var Container
+     * @var Container|ContextContainer
      */
     protected $container;
 
@@ -39,4 +39,9 @@ abstract class ModuleProvider
     abstract public function register();
 
     abstract public function boot();
+
+    public function alias()
+    {
+        return [];
+    }
 }

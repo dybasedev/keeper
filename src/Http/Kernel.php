@@ -40,7 +40,8 @@ abstract class Kernel implements ProcessKernel
 {
     const DEFAULT_PATH
         = [
-            'config' => 'config',
+            'config'  => 'config',
+            'storage' => 'storage',
         ];
 
     /**
@@ -180,6 +181,7 @@ abstract class Kernel implements ProcessKernel
             /** @var ModuleProvider $moduleProviderInstance */
             $moduleProviderInstance = new $module($this->container, $configuration);
             $moduleProviderInstance->register();
+            $this->alias($moduleProviderInstance->alias());
 
             if ($moduleProviderInstance instanceof DestructibleModuleProvider) {
                 $this->moduleInstances[] = $moduleProviderInstance;
@@ -206,7 +208,9 @@ abstract class Kernel implements ProcessKernel
         }
 
         unset($router);
-        $this->alias();
+
+        ContextContainer::setInstance($this->container);
+        $this->alias($this->getBaseModuleAlias());
     }
 
     public function process(SwooleRequest $request, SwooleResponse $response)
@@ -249,7 +253,8 @@ abstract class Kernel implements ProcessKernel
                 $headers    = $exception->getHeaders();
             }
 
-            $html = (new ExceptionHandler($this->config->get('global.debug', false)))->getHtml(FlattenException::create($exception));
+            $html = (new ExceptionHandler($this->config->get('global.debug',
+                false)))->getHtml(FlattenException::create($exception));
             $this->prepareResponse(new SymfonyResponse($html, $statusCode, $headers))
                  ->setSwooleResponse($response)
                  ->send();
@@ -291,25 +296,29 @@ abstract class Kernel implements ProcessKernel
         unset($moduleInstance);
 
         $this->container->flush();
+        ContextContainer::setInstance(null);
     }
 
     /**
      * 系统模块别名
      */
-    protected function alias()
+    protected function alias(array $map)
     {
-        $map = [
-            'config'      => [Repository::class, IlluminateRepository::class],
-            'router'      => [Router::class],
-            'event'       => [Dispatcher::class, IlluminateDispatcher::class],
-            'log'         => ['logger', Logger::class],
-            'log.handler' => ['logger.handler', AbstractHandler::class],
-        ];
-
         foreach ($map as $origin => $aliases) {
             foreach ($aliases as $alias) {
                 $this->container->alias($origin, $alias);
             }
         }
+    }
+
+    protected function getBaseModuleAlias()
+    {
+        return [
+            'config'      => [Repository::class, IlluminateRepository::class],
+            'router'      => [Router::class],
+            'event'       => [Dispatcher::class, IlluminateDispatcher::class, 'events'],
+            'log'         => ['logger', Logger::class],
+            'log.handler' => ['logger.handler', AbstractHandler::class],
+        ];
     }
 }
