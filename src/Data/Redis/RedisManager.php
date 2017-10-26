@@ -95,8 +95,10 @@ class RedisManager
     public function freeConnection(int $database = null)
     {
         if (is_null($database)) {
-            foreach ($this->connections as $connection) {
-                $connection->close();
+            if ($this->connections) {
+                foreach ($this->connections as $connection) {
+                    $connection->close();
+                }
             }
 
             unset($this->connections);

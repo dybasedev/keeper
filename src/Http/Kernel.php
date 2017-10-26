@@ -74,6 +74,11 @@ abstract class Kernel implements ProcessKernel
     protected $routeMiddlewares = [];
 
     /**
+     * @var Repository
+     */
+    protected $config;
+
+    /**
      * Kernel constructor.
      *
      * @param            $basePath
@@ -170,7 +175,7 @@ abstract class Kernel implements ProcessKernel
         $this->loadBaseModule();
 
         $moduleProviderInstances = [];
-        $configuration           = $this->container['config'];
+        $this->config            = $configuration = $this->container['config'];
         foreach ($this->moduleProviders as $module) {
             /** @var ModuleProvider $moduleProviderInstance */
             $moduleProviderInstance = new $module($this->container, $configuration);
@@ -244,8 +249,7 @@ abstract class Kernel implements ProcessKernel
                 $headers    = $exception->getHeaders();
             }
 
-            $html
-                = (new ExceptionHandler($this->container['config']->get('global.debug')))->getHtml(FlattenException::create($exception));
+            $html = (new ExceptionHandler($this->config->get('global.debug', false)))->getHtml(FlattenException::create($exception));
             $this->prepareResponse(new SymfonyResponse($html, $statusCode, $headers))
                  ->setSwooleResponse($response)
                  ->send();
