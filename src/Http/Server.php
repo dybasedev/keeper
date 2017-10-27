@@ -44,10 +44,34 @@ class Server extends AbstractServer
             throw new RuntimeException('Unknown process kernel.');
         }
 
-        $server->on('workerStart', [$this->handler, 'init']);
+        $server->on('start', $this->onServerStart());
+        $server->on('managerStart', $this->onManagerStart());
+        $server->on('workerStart', $this->onWorkerStart());
         $server->on('request', [$this->handler, 'process']);
         $server->on('workerStop', [$this->handler, 'destroy']);
 
         return $server;
+    }
+
+    protected function onWorkerStart()
+    {
+        return function (SwooleHttpServer $server, int $workerId) {
+            cli_set_process_title('keeper:worker#' . (string)$workerId);
+            $this->handler->init($server, $workerId);
+        };
+    }
+
+    protected function onServerStart()
+    {
+        return function () {
+            cli_set_process_title('keeper:master');
+        };
+    }
+
+    protected function onManagerStart()
+    {
+        return function () {
+            cli_set_process_title('keeper:manager');
+        };
     }
 }

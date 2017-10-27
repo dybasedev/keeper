@@ -40,8 +40,8 @@ class ServerManageCommand extends Command
     {
         $this->setName('server:control')
              ->setDescription('Server Controller')
-             ->addArgument('signal', InputArgument::REQUIRED,
-                 'Send signal to master process, support: start, stop, restart, reload')
+             ->addArgument('signal', InputArgument::OPTIONAL,
+                 'Send signal to master process, support: start, stop, restart, reload', 'start')
              ->addOption('host', 'H', InputOption::VALUE_OPTIONAL, 'Server host')
              ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'Server port')
              ->addOption('pid_file', 'P', InputOption::VALUE_OPTIONAL, 'PID File path.')
@@ -54,26 +54,32 @@ class ServerManageCommand extends Command
     {
         $this->output = $output;
 
-        if ($input->hasOption('host')) {
-            $this->host = $input->getOption('host');
+        if ($host = $input->getOption('host')) {
+            $this->host = $host;
         }
 
-        if ($input->hasOption('port')) {
-            $this->port = $input->getOption('port');
+        if ($port = $input->getOption('port')) {
+            $this->port = $port;
         }
 
-        if ($input->hasOption('pid_file')) {
-            $this->pidFile = $this->options['pid_file'] = $input->getOption('pid_file');
+        if ($pidFile = $input->getOption('pid_file')) {
+            $this->pidFile = $this->options['pid_file'] = $pidFile;
         }
 
-        if ($input->hasOption('daemon')) {
+        if (!$this->pidFile) {
+            if (isset($this->options['pid_file'])) {
+                $this->pidFile = $this->options['pid_file'];
+            }
+        }
+
+        if ($input->getOption('daemon')) {
             $this->options['daemonize'] = true;
-        } elseif ($input->hasOption('nodaemon')) {
+        } elseif ($input->getOption('nodaemon')) {
             $this->options['daemonize'] = false;
         }
 
-        if ($input->hasOption('log_file')) {
-            $this->options['log_file'] = $input->getOption('log_file');
+        if ($logFile = $input->getOption('log_file')) {
+            $this->options['log_file'] = $logFile;
         }
 
         $signal = $input->getArgument('signal');
@@ -121,13 +127,11 @@ class ServerManageCommand extends Command
 
     protected function startServer()
     {
-        $this->output->write("keeper: Start server...");
+        $this->output->writeln("keeper: Start server <bg=green>successful</>");
 
         ob_start();
         $this->createServerInstance()->setHandler($this->handler)->start();
         ob_end_clean();
-
-        $this->output->write("keeper: <bg=green>Successful</>\n");
 
         return 0;
     }
@@ -140,13 +144,7 @@ class ServerManageCommand extends Command
             posix_kill($pid, SIGTERM);
             $this->output->writeln("keeper: Stop server...");
 
-            usleep(100);
-
-            if (file_exists($this->pidFile)) {
-                $this->output->writeln("keeper: <error>Stop server failed</error>");
-
-                return 2;
-            }
+            sleep(1);
         }
 
         $this->output->write("keeper: <bg=green>Successful</>\n");
