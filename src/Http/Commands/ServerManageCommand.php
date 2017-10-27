@@ -42,7 +42,7 @@ class ServerManageCommand extends Command
              ->setDescription('Server Controller')
              ->addArgument('signal', InputArgument::REQUIRED,
                  'Send signal to master process, support: start, stop, restart, reload')
-             ->addOption('host', 'h', InputOption::VALUE_OPTIONAL, 'Server host')
+             ->addOption('host', 'H', InputOption::VALUE_OPTIONAL, 'Server host')
              ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'Server port')
              ->addOption('pid_file', 'P', InputOption::VALUE_OPTIONAL, 'PID File path.')
              ->addOption('log_file', 'l', InputOption::VALUE_OPTIONAL, 'Log file path.')
@@ -77,7 +77,7 @@ class ServerManageCommand extends Command
         }
 
         $signal = $input->getArgument('signal');
-        switch (strtoupper($signal)) {
+        switch (strtolower($signal)) {
             case 'start':
                 return $this->startServer();
             case 'stop':
