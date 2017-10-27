@@ -89,6 +89,8 @@ abstract class Kernel implements ProcessKernel
     {
         $this->container = $container ?: new ContextContainer();
         $this->registerPath($basePath);
+
+        ContextContainer::setInstance($this->container);
     }
 
     protected function registerPath($basePath)
@@ -209,7 +211,6 @@ abstract class Kernel implements ProcessKernel
 
         unset($router);
 
-        ContextContainer::setInstance($this->container);
         $this->alias($this->getBaseModuleAlias());
     }
 
