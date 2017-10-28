@@ -18,7 +18,17 @@ class Select extends Base
 
     public function select($columns = ['*'])
     {
+        return $this;
+    }
 
+    public function groupBy()
+    {
+        return $this;
+    }
+
+    public function orderBy()
+    {
+        return $this;
     }
 
     public function buildSql()
