@@ -13,6 +13,9 @@ use RuntimeException;
 
 class PreparationManager
 {
+    /**
+     * @var array
+     */
     protected $prepared = [];
 
     /**
@@ -47,11 +50,21 @@ class PreparationManager
             throw new RuntimeException("Source key conflict: {$key}");
         }
 
-        $prepare = $this->getPdoInstance()->prepare($preparation->statement);
+        $pdoStatement = $this->getPdoInstance()->prepare($preparation->statement);
 
-        $this->prepared[$key] = $prepare;
+        $this->prepared[$key] = [$pdoStatement, $preparation];
 
         return $this;
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return array
+     */
+    public function getPreparation(string $key)
+    {
+        return $this->prepared[$key] ?? null;
     }
 
     /**
