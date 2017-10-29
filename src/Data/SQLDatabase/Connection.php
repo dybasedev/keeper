@@ -9,15 +9,21 @@
 namespace Dybasedev\Keeper\Data\SQLDatabase;
 
 
+use Dybasedev\Keeper\Data\SQLDatabase\Exceptions\ConnectException;
+use Dybasedev\Keeper\Data\SQLDatabase\Interfaces\ConnectionDriver;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\DetectsLostConnections;
 use InvalidArgumentException;
 use PDO;
+use PDOException;
 use PDOStatement;
 
 class Connection
 {
+    use DetectsLostConnections;
+
     /**
      * @var Container
      */
@@ -44,6 +50,11 @@ class Connection
     protected $pdoInstances;
 
     /**
+     * @var string
+     */
+    protected $defaultConnectionName;
+
+    /**
      * Connection constructor.
      *
      * @param Container  $container
@@ -59,9 +70,7 @@ class Connection
 
     public function connect(string $connection = null)
     {
-        if (is_null($connection)) {
-            $connection = $this->config['storage.database.default'];
-        }
+        $connection = $this->getConnectionName($connection);
 
         if (isset($this->pdoInstances[$connection])) {
             return true;
@@ -72,12 +81,39 @@ class Connection
             throw new InvalidArgumentException();
         }
 
-        //
+        $driverName = $config['driver'];
+
+        /** @var ConnectionDriver $driver */
+        $driver = $this->container['sql.db.driver.' . $driverName];
+        $driver->setConnectOptions($config);
+
+        try {
+            $this->pdoInstances[$connection] = $driver->createPdoInstance();
+        } catch (PDOException $exception) {
+            throw new ConnectException($exception->getMessage(), 0, $exception);
+        }
+
+        return true;
+    }
+
+    public function getConnectionName(string $connection = null)
+    {
+        if (is_null($connection)) {
+            return $this->defaultConnectionName ?: $this->defaultConnectionName = $this->config['storage.database.default'];
+        }
+
+        return $connection;
     }
 
     public function reconnect(string $connection = null)
     {
+        $connection = $this->getConnectionName($connection);
 
+        if (isset($this->pdoInstances[$connection])) {
+            unset($this->pdoInstances[$connection]);
+        }
+
+        return $this->connect($connection);
     }
 
     /**
@@ -104,6 +140,16 @@ class Connection
 
         $preparation->binder($statement, $bindParameters);
 
-        return $statement->execute();
+        try {
+            return $statement->execute();
+        } catch (PDOException $exception) {
+            if ($this->causedByLostConnection($exception)) {
+                $this->reconnect();
+
+                return $statement->execute();
+            }
+
+            throw $exception;
+        }
     }
 }
