@@ -56,7 +56,7 @@ class Server extends AbstractServer
     protected function onWorkerStart()
     {
         return function (SwooleHttpServer $server, int $workerId) {
-            cli_set_process_title('keeper:worker#' . (string)$workerId);
+            cli_set_process_title($this->handler->getProcessName() . ':worker#' . (string)$workerId);
             $this->handler->init($server, $workerId);
         };
     }
@@ -64,14 +64,14 @@ class Server extends AbstractServer
     protected function onServerStart()
     {
         return function () {
-            cli_set_process_title('keeper:master');
+            cli_set_process_title($this->handler->getProcessName() . ':master');
         };
     }
 
     protected function onManagerStart()
     {
         return function () {
-            cli_set_process_title('keeper:manager');
+            cli_set_process_title($this->handler->getProcessName() . ':manager');
         };
     }
 }

@@ -19,6 +19,8 @@ use Swoole\Http\Server as SwooleHttpServer;
  */
 interface ProcessKernel
 {
+    public function getProcessName(): string;
+
     public function init(SwooleHttpServer $server, $workerId);
 
     public function process(Request $request, Response $response);
