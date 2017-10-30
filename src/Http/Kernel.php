@@ -79,6 +79,16 @@ abstract class Kernel implements ProcessKernel
      */
     protected $config;
 
+    protected $processName;
+
+    /**
+     * @return string
+     */
+    public function getProcessName(): string
+    {
+        return $this->processName ?: 'keeper';
+    }
+
     /**
      * Kernel constructor.
      *
