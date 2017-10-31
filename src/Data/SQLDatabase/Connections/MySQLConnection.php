@@ -1,28 +1,19 @@
 <?php
 /**
- * MySQLConnectionDriver.php
+ * MySQLConnection.php
  *
  * @copyright Chongyi <xpz3847878@163.com>
  * @link      https://insp.top
  */
 
-namespace Dybasedev\Keeper\Data\SQLDatabase\ConnectionDrivers;
+namespace Dybasedev\Keeper\Data\SQLDatabase\Connections;
 
 
-use Dybasedev\Keeper\Data\SQLDatabase\Interfaces\ConnectionDriver;
+use Dybasedev\Keeper\Data\SQLDatabase\Connection;
 use PDO;
 
-class MySQLConnectionDriver implements ConnectionDriver
+class MySQLConnection extends Connection
 {
-    protected $options;
-
-    public function setConnectOptions(array $options)
-    {
-        $this->options = $options;
-
-        return $this;
-    }
-
     public function getPdoDsn(): string
     {
         return sprintf("mysql:host=%s;dbname=%s;port=%s;charset=%s",
