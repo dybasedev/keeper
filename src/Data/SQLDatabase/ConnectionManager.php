@@ -25,6 +25,16 @@ class ConnectionManager
      */
     protected $config;
 
+    /**
+     * ConnectionManager constructor.
+     *
+     * @param array $config
+     */
+    public function __construct(array $config)
+    {
+        $this->config = $config;
+    }
+
     public function registerConnectionCreator($connection, Closure $callback)
     {
         $this->connectionCreator[$connection] = $callback;

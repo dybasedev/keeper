@@ -35,6 +35,17 @@ abstract class Connection
      */
     protected $options;
 
+    /**
+     * Connection constructor.
+     *
+     * @param array $options
+     */
+    public function __construct(array $options)
+    {
+        $this->options = $options;
+    }
+
+
     public function connect()
     {
         if ($this->pdoInstance) {

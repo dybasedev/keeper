@@ -8,6 +8,7 @@
 
 namespace Dybasedev\Keeper\Http\Providers;
 
+use Dybasedev\Keeper\Data\SQLDatabase\ConnectionManager;
 use Dybasedev\Keeper\Data\SQLDatabase\Connections\MySQLConnection;
 use Dybasedev\Keeper\Data\SQLDatabase\PreparationManager;
 use Dybasedev\Keeper\Http\ModuleProvider;
@@ -18,7 +19,11 @@ class DatabaseProvider extends ModuleProvider
     public function register()
     {
         $this->container->singleton('sql.db', function () {
+            $manager = new ConnectionManager($this->config['storage.database']);
 
+            $manager->registerConnectionCreator('mysql', function (array $options) {
+                return new MySQLConnection($options);
+            });
         });
 
         $this->container->singleton('sql.db.driver.mysql', MySQLConnection::class);
