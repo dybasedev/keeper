@@ -13,8 +13,8 @@ use Dybasedev\Keeper\Data\SQLDatabase\Exceptions\ConnectException;
 use Dybasedev\Keeper\Data\SQLDatabase\Exceptions\QueryException;
 use Illuminate\Database\DetectsLostConnections;
 use PDO;
-use PDOStatement;
 use PDOException;
+use PDOStatement;
 
 abstract class Connection
 {
