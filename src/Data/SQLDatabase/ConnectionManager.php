@@ -69,7 +69,7 @@ class ConnectionManager
         return $this->config['default'];
     }
 
-    public function __call($name, ...$arguments)
+    public function __call($name, $arguments)
     {
         return $this->getConnection()->{$name}(...$arguments);
     }
