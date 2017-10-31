@@ -22,6 +22,8 @@ class DatabaseProvider extends ModuleProvider
             $manager->registerConnectionCreator('mysql', function (array $options) {
                 return new MySQLConnection($options);
             });
+
+            return $manager;
         });
 
     }
