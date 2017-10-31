@@ -18,6 +18,9 @@ class ConnectionManager
      */
     protected $connections = [];
 
+    /**
+     * @var array|Closure[]
+     */
     protected $connectionCreator = [];
 
     /**
