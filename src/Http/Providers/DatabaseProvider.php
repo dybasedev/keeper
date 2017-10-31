@@ -33,7 +33,7 @@ class DatabaseProvider extends ModuleProvider
     public function alias()
     {
         return [
-
+            'sql.db' => [ConnectionManager::class]
         ];
     }
 
