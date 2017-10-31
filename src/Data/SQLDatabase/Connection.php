@@ -48,11 +48,11 @@ abstract class Connection
 
     public function connect()
     {
-        if ($this->pdoInstance) {
-            return $this->pdoInstance;
+        if (!$this->pdoInstance) {
+            $this->pdoInstance = $this->createPdoInstance();
         }
 
-        return $this->pdoInstance = $this->createPdoInstance();
+        return $this;
     }
 
     public function reconnect()
