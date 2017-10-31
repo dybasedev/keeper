@@ -10,9 +10,7 @@ namespace Dybasedev\Keeper\Http\Providers;
 
 use Dybasedev\Keeper\Data\SQLDatabase\ConnectionManager;
 use Dybasedev\Keeper\Data\SQLDatabase\Connections\MySQLConnection;
-use Dybasedev\Keeper\Data\SQLDatabase\PreparationManager;
 use Dybasedev\Keeper\Http\ModuleProvider;
-use Illuminate\Contracts\Container\Container;
 
 class DatabaseProvider extends ModuleProvider
 {
@@ -26,11 +24,6 @@ class DatabaseProvider extends ModuleProvider
             });
         });
 
-        $this->container->singleton('sql.db.driver.mysql', MySQLConnection::class);
-
-        $this->container->singleton('sql.db.preparation', function (Container $container) {
-            return new PreparationManager($container['sql.db']);
-        });
     }
 
     public function boot()
