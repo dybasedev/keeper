@@ -10,7 +10,6 @@ namespace Dybasedev\Keeper\Data\SQLDatabase;
 
 use Closure;
 use Dybasedev\Keeper\Data\SQLDatabase\Exceptions\ConnectException;
-use Dybasedev\Keeper\Data\SQLDatabase\Exceptions\QueryException;
 use Illuminate\Database\DetectsLostConnections;
 use PDO;
 use PDOException;
@@ -26,7 +25,7 @@ abstract class Connection
     protected $pdoInstance;
 
     /**
-     * @var array|PDOStatement[]
+     * @var PDOStatement[]
      */
     protected $preparations = [];
 
@@ -46,6 +45,11 @@ abstract class Connection
     }
 
 
+    /**
+     * 连接
+     *
+     * @return $this
+     */
     public function connect()
     {
         if (!$this->pdoInstance) {
@@ -55,6 +59,9 @@ abstract class Connection
         return $this;
     }
 
+    /**
+     * @return Connection
+     */
     public function reconnect()
     {
         $this->pdoInstance = null;
@@ -63,10 +70,19 @@ abstract class Connection
         return $this->connect();
     }
 
-    public function statementProcess($statement, $bindings = [], $checkPreparationCache = true)
+    /**
+     * 语句执行过程
+     *
+     * @param string $statement
+     * @param array  $bindings
+     * @param bool   $checkPreparationCache
+     *
+     * @return PDOStatement
+     */
+    public function statementProcess(string $statement, $bindings = [], $checkPreparationCache = true)
     {
         if ($checkPreparationCache) {
-            $hash = md5($statement);
+            $hash = $this->hashStatement($statement);
 
             if (isset($this->preparations[$hash])) {
                 $prepared = $this->preparations[$hash];
@@ -83,7 +99,28 @@ abstract class Connection
         return $prepared;
     }
 
-    public function runStatement($statement, $bindings = [], $checkPreparationCache = true)
+    /**
+     * 获取语句摘要
+     *
+     * @param string $statement
+     *
+     * @return string
+     */
+    public function hashStatement(string $statement)
+    {
+        return md5($statement);
+    }
+
+    /**
+     * 执行语句
+     *
+     * @param string $statement
+     * @param array  $bindings
+     * @param bool   $checkPreparationCache
+     *
+     * @return PDOStatement
+     */
+    public function runStatement(string $statement, $bindings = [], $checkPreparationCache = true)
     {
         try {
             return $this->statementProcess($statement, $bindings, $checkPreparationCache);
@@ -97,30 +134,68 @@ abstract class Connection
         }
     }
 
-    public function execute($statement, $bindings = [], $cachePreparationCache = true)
+    /**
+     * 执行一条语句，返回该语句执行后影响的行数
+     *
+     * @param string $statement
+     * @param array  $bindings
+     * @param bool   $cachePreparationCache
+     *
+     * @return int
+     */
+    public function execute(string $statement, $bindings = [], $cachePreparationCache = true)
     {
         $prepared = $this->runStatement($statement, $bindings, $cachePreparationCache);
 
         return $prepared->rowCount();
     }
 
-    public function insert($statement, $bindings = [], $checkPreparationCache = true)
+    /**
+     * 执行一条写入（插入）语句，返回该语句执行后产生的 ID
+     *
+     * @param string $statement
+     * @param array  $bindings
+     * @param bool   $checkPreparationCache
+     *
+     * @return string
+     */
+    public function insert(string $statement, $bindings = [], $checkPreparationCache = true)
     {
         $this->runStatement($statement, $bindings, $checkPreparationCache);
 
         return $this->getPdoInstance()->lastInsertId();
     }
 
-    public function query($statement, $bindings = [], $cachePreparationCache = true)
+    /**
+     *
+     *
+     * @param string $statement
+     * @param array  $bindings
+     * @param bool   $cachePreparationCache
+     *
+     * @return PDOStatement
+     */
+    public function query(string $statement, $bindings = [], $cachePreparationCache = true)
     {
         return $this->runStatement($statement, $bindings, $cachePreparationCache);
     }
 
-    protected function makePreparedStatement($statement)
+
+    /**
+     * 构造 PDO 语句文件
+     *
+     * @param string $statement
+     *
+     * @return PDOStatement
+     */
+    protected function makePreparedStatement(string $statement)
     {
         return $this->getPdoInstance()->prepare($statement);
     }
 
+    /**
+     * @return PDO
+     */
     public function getPdoInstance()
     {
         if (!$this->pdoInstance) {
@@ -128,11 +203,6 @@ abstract class Connection
         }
 
         return $this->pdoInstance;
-    }
-
-    public function selectStatement($statement)
-    {
-
     }
 
     protected function cleanConnection()
