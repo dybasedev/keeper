@@ -78,11 +78,7 @@ abstract class Connection
             $prepared = $this->makePreparedStatement($statement);
         }
 
-        $result = $prepared->execute($bindings);
-
-        if (!$result) {
-            throw new QueryException($this->getPdoInstance()->errorInfo()[2], $this->getPdoInstance()->errorCode());
-        }
+        $prepared->execute($bindings);
 
         return $prepared;
     }
