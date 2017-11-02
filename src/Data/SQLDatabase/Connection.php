@@ -178,6 +178,7 @@ abstract class Connection
         }
 
         if ($getGenerator) {
+            /** @var Generator $result */
             $result = (function (PDOStatement $statement) {
                 foreach ($statement as $index => $item) {
                     yield $index => $item;
