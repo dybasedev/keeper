@@ -45,8 +45,23 @@ abstract class Connection
     public function __construct(array $options)
     {
         $this->options = $options;
+
+        if (isset($this->options['fetch_options'])) {
+            $this->fetchOptions = $this->options['fetch_options'];
+        }
     }
 
+    /**
+     * @param array $options
+     *
+     * @return $this
+     */
+    public function setFetchOptions(array $options)
+    {
+        $this->fetchOptions = $options;
+
+        return $this;
+    }
 
     /**
      * 连接
