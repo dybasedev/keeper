@@ -202,6 +202,8 @@ abstract class Kernel implements ProcessKernel
             $moduleProviderInstances[] = $moduleProviderInstance;
         }
 
+        $this->alias($this->getBaseModuleAlias());
+
         foreach ($moduleProviderInstances as $moduleProviderInstance) {
             $moduleProviderInstance->boot();
         }
@@ -220,8 +222,6 @@ abstract class Kernel implements ProcessKernel
         }
 
         unset($router);
-
-        $this->alias($this->getBaseModuleAlias());
     }
 
     public function process(SwooleRequest $request, SwooleResponse $response)
