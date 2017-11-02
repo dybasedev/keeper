@@ -10,6 +10,7 @@ namespace Dybasedev\Keeper\Data\SQLDatabase;
 
 use Closure;
 use Dybasedev\Keeper\Data\SQLDatabase\Exceptions\ConnectException;
+use Generator;
 use Illuminate\Database\DetectsLostConnections;
 use PDO;
 use PDOException;
@@ -33,6 +34,8 @@ abstract class Connection
      * @var array
      */
     protected $options;
+
+    protected $fetchOptions = [PDO::FETCH_BOTH];
 
     /**
      * Connection constructor.
@@ -111,6 +114,7 @@ abstract class Connection
         try {
             return $this->statementProcess($statement, $bindings);
         } catch (PDOException $exception) {
+            // 判断是否是连接断开，若是则尝试重连
             if ($this->causedByLostConnection($exception)) {
                 $this->reconnect();
 
@@ -154,14 +158,38 @@ abstract class Connection
     /**
      *
      *
-     * @param string $statement
-     * @param array  $bindings
+     * @param string     $statement
+     * @param array      $bindings
+     * @param array|null $fetcher
+     * @param bool       $getGenerator
      *
-     * @return PDOStatement
+     * @return array|Generator
      */
-    public function query(string $statement, $bindings = [])
+    public function query(string $statement, $bindings = [], $fetcher = null, $getGenerator = true)
     {
-        return $this->runStatement($statement, $bindings);
+        $statement = $this->runStatement($statement, $bindings);
+
+        if (is_null($fetcher)) {
+            $fetcher = $this->fetchOptions;
+        }
+
+        if (is_array($fetcher)) {
+            $statement->setFetchMode(...$fetcher);
+        }
+
+        if ($getGenerator) {
+            $result = (function (PDOStatement $statement) {
+                foreach ($statement as $index => $item) {
+                    yield $index => $item;
+                }
+            })($statement);
+        } else {
+            $result = $statement->fetchAll();
+        }
+
+        $statement->setFetchMode(...$this->fetchOptions);
+
+        return $result;
     }
 
 
