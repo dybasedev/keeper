@@ -75,23 +75,18 @@ abstract class Connection
      *
      * @param string $statement
      * @param array  $bindings
-     * @param bool   $checkPreparationCache
      *
      * @return PDOStatement
      */
-    public function statementProcess(string $statement, $bindings = [], $checkPreparationCache = true)
+    public function statementProcess(string $statement, $bindings = [])
     {
-        if ($checkPreparationCache) {
-            $hash = $this->hashStatement($statement);
+        $hash = $this->hashStatement($statement);
 
-            if (isset($this->preparations[$hash])) {
-                $prepared = $this->preparations[$hash];
-            } else {
-                $prepared = $this->makePreparedStatement($statement);
-                $this->preparations[$hash] = $prepared;
-            }
+        if (isset($this->preparations[$hash])) {
+            $prepared = $this->preparations[$hash];
         } else {
             $prepared = $this->makePreparedStatement($statement);
+            $this->preparations[$hash] = $prepared;
         }
 
         $prepared->execute($bindings);
@@ -116,18 +111,17 @@ abstract class Connection
      *
      * @param string $statement
      * @param array  $bindings
-     * @param bool   $checkPreparationCache
      *
      * @return PDOStatement
      */
-    public function runStatement(string $statement, $bindings = [], $checkPreparationCache = true)
+    public function runStatement(string $statement, $bindings = [])
     {
         try {
-            return $this->statementProcess($statement, $bindings, $checkPreparationCache);
+            return $this->statementProcess($statement, $bindings);
         } catch (PDOException $exception) {
             if ($this->causedByLostConnection($exception)) {
                 $this->reconnect();
-                return $this->statementProcess($statement, $bindings, $checkPreparationCache);
+                return $this->statementProcess($statement, $bindings);
             }
 
             throw $exception;
@@ -139,13 +133,12 @@ abstract class Connection
      *
      * @param string $statement
      * @param array  $bindings
-     * @param bool   $cachePreparationCache
      *
      * @return int
      */
-    public function execute(string $statement, $bindings = [], $cachePreparationCache = true)
+    public function execute(string $statement, $bindings = [])
     {
-        $prepared = $this->runStatement($statement, $bindings, $cachePreparationCache);
+        $prepared = $this->runStatement($statement, $bindings);
 
         return $prepared->rowCount();
     }
@@ -155,13 +148,12 @@ abstract class Connection
      *
      * @param string $statement
      * @param array  $bindings
-     * @param bool   $checkPreparationCache
      *
      * @return string
      */
-    public function insert(string $statement, $bindings = [], $checkPreparationCache = true)
+    public function insert(string $statement, $bindings = [])
     {
-        $this->runStatement($statement, $bindings, $checkPreparationCache);
+        $this->runStatement($statement, $bindings);
 
         return $this->getPdoInstance()->lastInsertId();
     }
@@ -171,13 +163,12 @@ abstract class Connection
      *
      * @param string $statement
      * @param array  $bindings
-     * @param bool   $cachePreparationCache
      *
      * @return PDOStatement
      */
-    public function query(string $statement, $bindings = [], $cachePreparationCache = true)
+    public function query(string $statement, $bindings = [])
     {
-        return $this->runStatement($statement, $bindings, $cachePreparationCache);
+        return $this->runStatement($statement, $bindings);
     }
 
 
