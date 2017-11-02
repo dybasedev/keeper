@@ -229,10 +229,7 @@ abstract class Kernel implements ProcessKernel
         try {
             $illuminateRequest = Request::createFromSwooleRequest($request);
 
-            $this->container->instance(IlluminateRequest::class, $illuminateRequest);
-            $this->container->alias(IlluminateRequest::class, 'request');
-            $this->container->alias(IlluminateRequest::class, Request::class);
-            $this->container->alias(IlluminateRequest::class, SymfonyRequest::class);
+            $this->container->instance('request', $illuminateRequest);
 
             /** @var Router $router */
             $router = $this->container->make('router');
@@ -330,6 +327,7 @@ abstract class Kernel implements ProcessKernel
             'event'       => [Dispatcher::class, IlluminateDispatcher::class, 'events'],
             'log'         => ['logger', Logger::class],
             'log.handler' => ['logger.handler', AbstractHandler::class],
+            'request'     => [IlluminateRequest::class, Request::class, SymfonyRequest::class],
         ];
     }
 }
