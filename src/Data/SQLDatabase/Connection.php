@@ -156,12 +156,12 @@ abstract class Connection
     }
 
     /**
-     *
+     * 进行一条查询，并获取结果
      *
      * @param string     $statement
      * @param array      $bindings
      * @param array|null $fetcher
-     * @param bool       $getGenerator
+     * @param bool       $getGenerator 返回结果是否是一个生成器（Generator），默认为 true
      *
      * @return array|Generator
      */
