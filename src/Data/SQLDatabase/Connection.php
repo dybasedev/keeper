@@ -9,8 +9,10 @@
 namespace Dybasedev\Keeper\Data\SQLDatabase;
 
 use Closure;
+use Dybasedev\Keeper\Data\SQLDatabase\Events\StatementProcessed;
 use Dybasedev\Keeper\Data\SQLDatabase\Exceptions\ConnectException;
 use Generator;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\DetectsLostConnections;
 use PDO;
 use PDOException;
@@ -35,6 +37,14 @@ abstract class Connection
      */
     protected $options;
 
+    /**
+     * @var Dispatcher
+     */
+    protected $dispatcher;
+
+    /**
+     * @var array
+     */
     protected $fetchOptions = [PDO::FETCH_BOTH];
 
     /**
@@ -89,6 +99,29 @@ abstract class Connection
     }
 
     /**
+     * @param mixed $event
+     */
+    public function triggerEvent($event)
+    {
+        if ($this->dispatcher) {
+            $this->dispatcher->dispatch($event);
+        }
+    }
+
+    /**
+     * 设置事件调度器
+     *
+     * @param Dispatcher $dispatcher
+     *
+     * @return $this
+     */
+    public function setDispatcher(Dispatcher $dispatcher)
+    {
+        $this->dispatcher = $dispatcher;
+        return $this;
+    }
+
+    /**
      * 语句执行过程
      *
      * @param string $statement
@@ -98,10 +131,19 @@ abstract class Connection
      */
     public function statementProcess(string $statement, $bindings = [])
     {
+        $startTime = microtime(true);
+
         $prepared = $this->makePreparedStatement($statement);
         $prepared->execute($bindings);
 
+        $this->triggerEvent(new StatementProcessed($statement, $bindings, $this->getElapsedTime($startTime)));
+
         return $prepared;
+    }
+
+    public function getElapsedTime($start)
+    {
+        return (microtime(true) - $start) * 1000;
     }
 
     /**
