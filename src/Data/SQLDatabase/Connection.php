@@ -80,15 +80,7 @@ abstract class Connection
      */
     public function statementProcess(string $statement, $bindings = [])
     {
-        $hash = $this->hashStatement($statement);
-
-        if (isset($this->preparations[$hash])) {
-            $prepared = $this->preparations[$hash];
-        } else {
-            $prepared = $this->makePreparedStatement($statement);
-            $this->preparations[$hash] = $prepared;
-        }
-
+        $prepared = $this->makePreparedStatement($statement);
         $prepared->execute($bindings);
 
         return $prepared;
@@ -121,6 +113,7 @@ abstract class Connection
         } catch (PDOException $exception) {
             if ($this->causedByLostConnection($exception)) {
                 $this->reconnect();
+
                 return $this->statementProcess($statement, $bindings);
             }
 
@@ -181,7 +174,9 @@ abstract class Connection
      */
     protected function makePreparedStatement(string $statement)
     {
-        return $this->getPdoInstance()->prepare($statement);
+        $hash = $this->hashStatement($statement);
+
+        return $this->preparations[$hash] ?? $this->preparations[$hash] = $this->getPdoInstance()->prepare($statement);
     }
 
     /**
