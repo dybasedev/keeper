@@ -130,10 +130,19 @@ class ServerManageCommand extends Command
         $this->output->writeln("keeper: Start server <bg=green>successful</>");
 
         ob_start();
-        $this->createServerInstance()->setHandler($this->handler)->start();
+        $this->createServerInstance()->setHandler($this->getHandler())->start();
         ob_end_clean();
 
         return 0;
+    }
+
+    public function getHandler()
+    {
+        if ($this->handler instanceof \Closure) {
+            $this->handler = ($this->handler)();
+        }
+
+        return $this->handler;
     }
 
     protected function stopServer()
