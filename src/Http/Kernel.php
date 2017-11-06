@@ -30,7 +30,6 @@ use Swoole\Http\Server as SwooleHttpServer;
 use Illuminate\Http\Request as IlluminateRequest;
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 abstract class Kernel implements ProcessKernel
