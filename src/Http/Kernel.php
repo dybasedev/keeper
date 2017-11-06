@@ -19,7 +19,6 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Routing\Router;
-use InvalidArgumentException;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\AbstractHandler;
 use Monolog\Handler\ErrorLogHandler;
@@ -29,8 +28,6 @@ use Swoole\Http\Request as SwooleRequest;
 use Swoole\Http\Response as SwooleResponse;
 use Swoole\Http\Server as SwooleHttpServer;
 use Illuminate\Http\Request as IlluminateRequest;
-use Symfony\Component\Debug\Exception\FlattenException;
-use Symfony\Component\Debug\ExceptionHandler;
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -38,12 +35,6 @@ use Throwable;
 
 abstract class Kernel implements ProcessKernel
 {
-    const DEFAULT_PATH
-        = [
-            'config'  => 'config',
-            'storage' => 'storage',
-        ];
-
     /**
      * @var ContextContainer
      */
@@ -79,7 +70,15 @@ abstract class Kernel implements ProcessKernel
      */
     protected $config;
 
+    /**
+     * @var string
+     */
     protected $processName;
+
+    /**
+     * @var ExceptionHandler
+     */
+    protected $exceptionHandler;
 
     /**
      * @return string
@@ -97,35 +96,27 @@ abstract class Kernel implements ProcessKernel
      */
     public function __construct($basePath, Container $container = null)
     {
-        $this->container = $container ?: new ContextContainer();
-        $this->registerPath($basePath);
+        $this->container = $container ?: new ContextContainer($basePath);
 
         ContextContainer::setInstance($this->container);
     }
 
-    protected function registerPath($basePath)
+    /**
+     * @return ExceptionHandler
+     */
+    public function getExceptionHandler(): ExceptionHandler
     {
-        $this->container['path.base'] = $basePath;
-        foreach (self::DEFAULT_PATH as $name => $path) {
-            $this->container['path.' . $name] = $basePath . DIRECTORY_SEPARATOR . $path;
-        }
+        return $this->exceptionHandler ?: new ExceptionHandler($this->container, $this->config);
     }
 
     /**
-     * 替换默认路径
+     * @param ExceptionHandler $exceptionHandler
      *
-     * @param string $pathName
-     * @param string $path
-     *
-     * @return $this
+     * @return Kernel
      */
-    public function replacePath(string $pathName, string $path)
+    public function setExceptionHandler(ExceptionHandler $exceptionHandler): Kernel
     {
-        if (!in_array($pathName, array_keys(self::DEFAULT_PATH))) {
-            throw new InvalidArgumentException();
-        }
-
-        $this->container['path.' . $pathName] = $path;
+        $this->exceptionHandler = $exceptionHandler;
 
         return $this;
     }
@@ -137,8 +128,8 @@ abstract class Kernel implements ProcessKernel
      */
     protected function loadEnvironment()
     {
-        if (is_file($this->container['path.base'] . '/.env')) {
-            (new Dotenv($basePath = $this->container['path.base']))->load();
+        if (is_file($this->container->applicationPath . DIRECTORY_SEPARATOR . '.env')) {
+            (new Dotenv($basePath = $this->container->applicationPath))->load();
         }
     }
 
@@ -152,7 +143,7 @@ abstract class Kernel implements ProcessKernel
         $this->loadEnvironment();
 
         $config         = new IlluminateRepository();
-        $configurations = new FilesystemIterator($this->container['path.base'] . '/config',
+        $configurations = new FilesystemIterator($this->container->applicationPath . DIRECTORY_SEPARATOR . 'config',
             FilesystemIterator::SKIP_DOTS);
 
         /** @var SplFileInfo $configuration */
@@ -182,48 +173,29 @@ abstract class Kernel implements ProcessKernel
             (new Logger('keeper#' . $this->container['worker.id']))->pushHandler($this->container['log.handler']));
     }
 
+    /**
+     * 初始化
+     *
+     * @param SwooleHttpServer $server
+     * @param                  $workerId
+     */
     public function init(SwooleHttpServer $server, $workerId)
     {
         $this->container['worker.id'] = $workerId;
         $this->loadBaseModule();
 
-        $moduleProviderInstances = [];
-        $this->config            = $configuration = $this->container['config'];
-        foreach ($this->moduleProviders as $module) {
-            /** @var ModuleProvider $moduleProviderInstance */
-            $moduleProviderInstance = new $module($this->container, $configuration);
-            $moduleProviderInstance->register();
-            $this->alias($moduleProviderInstance->alias());
+        $this->config = $this->container['config'];
+        $this->loadModules();
 
-            if ($moduleProviderInstance instanceof DestructibleModuleProvider) {
-                $this->moduleInstances[] = $moduleProviderInstance;
-            }
-
-            $moduleProviderInstances[] = $moduleProviderInstance;
-        }
-
-        $this->alias($this->getBaseModuleAlias());
-
-        foreach ($moduleProviderInstances as $moduleProviderInstance) {
-            $moduleProviderInstance->boot();
-        }
-
-        unset($moduleProviderInstances);
-        unset($moduleProviderInstance);
-        unset($configuration);
-
-        $router = $this->container['router'];
-        foreach ($this->middlewareGroups as $key => $middleware) {
-            $router->middlewareGroup($key, $middleware);
-        }
-
-        foreach ($this->routeMiddlewares as $key => $middleware) {
-            $router->aliasMiddleware($key, $middleware);
-        }
-
-        unset($router);
+        $this->loadMiddlewares();
     }
 
+    /**
+     * 处理过程
+     *
+     * @param SwooleRequest  $request
+     * @param SwooleResponse $response
+     */
     public function process(SwooleRequest $request, SwooleResponse $response)
     {
         try {
@@ -253,22 +225,14 @@ abstract class Kernel implements ProcessKernel
 
             gc_collect_cycles();
         } catch (Throwable $exception) {
-            $statusCode = 500;
-            $headers    = [];
-
-            if ($exception instanceof HttpException) {
-                $statusCode = $exception->getStatusCode();
-                $headers    = $exception->getHeaders();
-            }
-
-            $html = (new ExceptionHandler($this->config->get('global.debug',
-                false)))->getHtml(FlattenException::create($exception));
-            $this->prepareResponse(new SymfonyResponse($html, $statusCode, $headers))
-                 ->setSwooleResponse($response)
-                 ->send();
-
+            $this->exceptionHandle($exception, $response);
             $this->container['log']->error((string)$exception);
         }
+    }
+
+    protected function exceptionHandle(Throwable $exception, SwooleResponse $response)
+    {
+        $this->getExceptionHandler()->handle($exception, $response);
     }
 
     /**
@@ -329,5 +293,45 @@ abstract class Kernel implements ProcessKernel
             'log.handler' => ['logger.handler', AbstractHandler::class],
             'request'     => [IlluminateRequest::class, Request::class, SymfonyRequest::class],
         ];
+    }
+
+    protected function loadModules()
+    {
+        $moduleProviderInstances = [];
+        foreach ($this->moduleProviders as $module) {
+            /** @var ModuleProvider $moduleProviderInstance */
+            $moduleProviderInstance = new $module($this->container, $this->config);
+            $moduleProviderInstance->register();
+            $this->alias($moduleProviderInstance->alias());
+
+            if ($moduleProviderInstance instanceof DestructibleModuleProvider) {
+                $this->moduleInstances[] = $moduleProviderInstance;
+            }
+
+            $moduleProviderInstances[] = $moduleProviderInstance;
+        }
+
+        $this->alias($this->getBaseModuleAlias());
+
+        foreach ($moduleProviderInstances as $moduleProviderInstance) {
+            $moduleProviderInstance->boot();
+        }
+
+        unset($moduleProviderInstances);
+        unset($moduleProviderInstance);
+    }
+
+    protected function loadMiddlewares()
+    {
+        $router = $this->container['router'];
+        foreach ($this->middlewareGroups as $key => $middleware) {
+            $router->middlewareGroup($key, $middleware);
+        }
+
+        foreach ($this->routeMiddlewares as $key => $middleware) {
+            $router->aliasMiddleware($key, $middleware);
+        }
+
+        unset($router);
     }
 }
