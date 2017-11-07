@@ -105,7 +105,8 @@ abstract class Kernel implements ProcessKernel
      */
     public function getExceptionHandler(): ExceptionHandler
     {
-        return $this->exceptionHandler ?: new ExceptionHandler($this->container, $this->config);
+        return $this->exceptionHandler ?: (new ExceptionHandler($this->container,
+            $this->config))->setLogger($this->container['log']);
     }
 
     /**
