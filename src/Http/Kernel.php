@@ -294,6 +294,9 @@ abstract class Kernel implements ProcessKernel
         ];
     }
 
+    /**
+     * 加载模块
+     */
     protected function loadModules()
     {
         $moduleProviderInstances = [];
@@ -320,6 +323,9 @@ abstract class Kernel implements ProcessKernel
         unset($moduleProviderInstance);
     }
 
+    /**
+     * 加载中间件
+     */
     protected function loadMiddlewares()
     {
         $router = $this->container['router'];
