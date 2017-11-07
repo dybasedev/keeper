@@ -226,7 +226,6 @@ abstract class Kernel implements ProcessKernel
             gc_collect_cycles();
         } catch (Throwable $exception) {
             $this->exceptionHandle($exception, $response);
-            $this->container['log']->error((string)$exception);
         }
     }
 

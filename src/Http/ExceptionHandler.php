@@ -75,6 +75,8 @@ class ExceptionHandler
 
     public function handle(\Throwable $exception, SwooleResponse $response)
     {
+        $this->logger->log(Logger::ERROR, (string)$exception);
+
         $statusCode = 500;
         $headers    = [];
 
