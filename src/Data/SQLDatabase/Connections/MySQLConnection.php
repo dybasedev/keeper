@@ -23,7 +23,10 @@ class MySQLConnection extends Connection
 
     public function createPdoInstance(): PDO
     {
-        return new PDO($this->getPdoDsn(), $this->options['username'], $this->options['password']);
+        $pdo = new PDO($this->getPdoDsn(), $this->options['username'], $this->options['password']);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        return $pdo;
     }
 
 
