@@ -199,26 +199,13 @@ abstract class Kernel implements ProcessKernel
     public function process(SwooleRequest $request, SwooleResponse $response)
     {
         try {
-            $illuminateRequest = Request::createFromSwooleRequest($request);
-
-            $this->container->instance('request', $illuminateRequest);
-
-            /** @var Router $router */
-            $router = $this->container->make('router');
-
-            $pipeline           = new Pipeline($this->container);
-            $illuminateResponse = $pipeline->send($illuminateRequest)
-                                           ->through($this->middlewares)
-                                           ->then(function (IlluminateRequest $request) use ($router) {
-                                               return $router->dispatch($request);
-                                           });
+            $illuminateRequest  = Request::createFromSwooleRequest($request);
+            $illuminateResponse = $this->handle($illuminateRequest);
 
             $this->prepareResponse($illuminateResponse)
                  ->setSwooleResponse($response)
                  ->send();
 
-            unset($pipeline);
-            unset($router);
             unset($this->container[IlluminateRequest::class]);
             unset($illuminateRequest);
             unset($illuminateResponse);
@@ -227,6 +214,31 @@ abstract class Kernel implements ProcessKernel
         } catch (Throwable $exception) {
             $this->exceptionHandle($exception, $response);
         }
+    }
+
+    /**
+     * @param IlluminateRequest $illuminateRequest
+     *
+     * @return \Illuminate\Http\Response
+     */
+    protected function handle(IlluminateRequest $illuminateRequest)
+    {
+        $this->container->instance('request', $illuminateRequest);
+
+        /** @var Router $router */
+        $router = $this->container->make('router');
+
+        $pipeline           = new Pipeline($this->container);
+        $illuminateResponse = $pipeline->send($illuminateRequest)
+                                       ->through($this->middlewares)
+                                       ->then(function (IlluminateRequest $request) use ($router) {
+                                           return $router->dispatch($request);
+                                       });
+
+        unset($pipeline);
+        unset($router);
+
+        return $illuminateResponse;
     }
 
     protected function exceptionHandle(Throwable $exception, SwooleResponse $response)
