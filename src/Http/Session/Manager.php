@@ -58,14 +58,30 @@ class Manager
         $this->driver->store($this->currentSessionId, $data, $this->config['lifetime']);
     }
 
-    public function openSession($sessionId)
+    protected function getCurrentSessionId()
     {
         if ($this->currentSessionId) {
-            $this->currentSessionId = null;
+            if ($this->driver->has($this->currentSessionId)) {
+                return $this->currentSessionId;
+            }
+        }
+
+        return $this->currentSessionId = null;
+    }
+
+    protected function setCurrentSessionId($sessionId)
+    {
+        $this->currentSessionId = $sessionId;
+    }
+
+    public function openSession($sessionId)
+    {
+        if ($this->getCurrentSessionId()) {
+            $this->closeSession();
             return false;
         }
 
-        $this->currentSessionId = $sessionId;
+        $this->setCurrentSessionId($sessionId);
         return true;
     }
 
