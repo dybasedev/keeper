@@ -22,6 +22,7 @@ use Illuminate\Routing\Router;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\AbstractHandler;
 use Monolog\Handler\ErrorLogHandler;
+use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use SplFileInfo;
 use Swoole\Http\Request as SwooleRequest;
@@ -162,15 +163,27 @@ abstract class Kernel implements ProcessKernel
         $this->container->instance('config', $config = $this->loadConfiguration());
         $this->container->instance('event', new IlluminateDispatcher($this->container));
         $this->container->instance('router', new Router($this->container['event'], $this->container));
-        $this->container->instance(
-            'log.handler',
-            (new ErrorLogHandler(ErrorLogHandler::OPERATING_SYSTEM, $config['global.log.level']))->setFormatter(
-                tap(new LineFormatter(null, null, true, true), function (LineFormatter $formatter) {
-                    $formatter->includeStacktraces();
-                }))
-        );
-        $this->container->instance('log',
-            (new Logger('keeper#' . $this->container['worker.id']))->pushHandler($this->container['log.handler']));
+        $this->registerLogger();
+    }
+
+    protected function registerLogger()
+    {
+        $logger = new Logger('keeper#' . $this->container['worker.id']);
+        $logger->setHandlers($this->getLoggerHandlers());
+
+        $this->container->instance('log', $logger);
+    }
+
+    protected function getLoggerHandlers()
+    {
+        $logConfiguration = $this->container['config']['global.log'];
+        $formatter        = tap(new LineFormatter(null, null, true, true), function (LineFormatter $formatter) {
+            $formatter->includeStacktraces();
+        });
+
+        return [
+            (new StreamHandler($logConfiguration['path'], $logConfiguration['level']))->setFormatter($formatter),
+        ];
     }
 
     /**
@@ -297,12 +310,11 @@ abstract class Kernel implements ProcessKernel
     protected function getBaseModuleAlias()
     {
         return [
-            'config'      => [Repository::class, IlluminateRepository::class],
-            'router'      => [Router::class],
-            'event'       => [Dispatcher::class, IlluminateDispatcher::class, 'events'],
-            'log'         => ['logger', Logger::class],
-            'log.handler' => ['logger.handler', AbstractHandler::class],
-            'request'     => [IlluminateRequest::class, Request::class, SymfonyRequest::class],
+            'config'  => [Repository::class, IlluminateRepository::class],
+            'router'  => [Router::class],
+            'event'   => [Dispatcher::class, IlluminateDispatcher::class, 'events'],
+            'log'     => ['logger', Logger::class],
+            'request' => [IlluminateRequest::class, Request::class, SymfonyRequest::class],
         ];
     }
 
