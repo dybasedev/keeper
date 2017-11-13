@@ -164,6 +164,8 @@ abstract class Kernel implements ProcessKernel
         $this->container->instance('event', new IlluminateDispatcher($this->container));
         $this->container->instance('router', new Router($this->container['event'], $this->container));
         $this->registerLogger();
+
+        $this->alias($this->getBaseModuleAlias());
     }
 
     protected function registerLogger()
@@ -219,7 +221,6 @@ abstract class Kernel implements ProcessKernel
                  ->setSwooleResponse($response)
                  ->send();
 
-            unset($this->container[IlluminateRequest::class]);
             unset($illuminateRequest);
             unset($illuminateResponse);
 
@@ -336,8 +337,6 @@ abstract class Kernel implements ProcessKernel
 
             $moduleProviderInstances[] = $moduleProviderInstance;
         }
-
-        $this->alias($this->getBaseModuleAlias());
 
         foreach ($moduleProviderInstances as $moduleProviderInstance) {
             $moduleProviderInstance->boot();

@@ -11,6 +11,7 @@ namespace Dybasedev\Keeper\Http\Providers;
 
 use Dybasedev\Keeper\Http\ContextContainer;
 use Dybasedev\Keeper\Http\ModuleProvider;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
 use Illuminate\Routing\ResponseFactory;
 use Illuminate\Routing\UrlGenerator;
@@ -51,11 +52,6 @@ class RoutingProvider extends ModuleProvider
     {
         $this->container->singleton('url', function (ContextContainer $container) {
             $routes = $container['router']->getRoutes();
-
-            // The URL generator needs the route collection that exists on the router.
-            // Keep in mind this is an object, so we're passing by references here
-            // and all the registered routes will be available to the generator.
-            $container->instance('routes', $routes);
 
             $url = new UrlGenerator(
                 $routes, $container->rebinding('request', $this->requestRebinder())
