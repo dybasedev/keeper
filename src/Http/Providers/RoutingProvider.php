@@ -34,6 +34,14 @@ class RoutingProvider extends ModuleProvider
         //
     }
 
+    public function alias()
+    {
+        return [
+            'url'      => [\Illuminate\Routing\UrlGenerator::class, \Illuminate\Contracts\Routing\UrlGenerator::class],
+            'redirect' => [\Illuminate\Routing\Redirector::class],
+        ];
+    }
+
     /**
      * Register the URL generator service.
      *
