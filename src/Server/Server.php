@@ -11,6 +11,11 @@ namespace Dybasedev\Keeper\Server;
 use Swoole\Http\Server as SwooleHttpServer;
 use Swoole\Server as SwooleServer;
 
+/**
+ * 服务器对象
+ *
+ * @package Dybasedev\Keeper\Server
+ */
 abstract class Server
 {
     /**
@@ -79,6 +84,7 @@ abstract class Server
     {
         $this->instance = $this->makeSwooleInstance();
         $this->instance->set($this->options);
+
         return $this->instance->start();
     }
 }
