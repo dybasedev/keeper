@@ -10,7 +10,8 @@
     }
   ],
   "require": {
-    "laravel/framework": "^5.5"
+    "laravel/framework": "^5.5",
+    "psr/container": "^1.0"
   },
   "require-dev": {
     "eaglewu/swoole-ide-helper": "dev-master"
