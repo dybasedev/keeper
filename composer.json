@@ -11,7 +11,8 @@
   ],
   "require": {
     "laravel/framework": "^5.5",
-    "psr/container": "^1.0"
+    "psr/container": "^1.0",
+    "nikic/fast-route": "^1.2"
   },
   "require-dev": {
     "eaglewu/swoole-ide-helper": "dev-master"
