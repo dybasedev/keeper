@@ -30,6 +30,17 @@ abstract class AbstractServer
     protected $processKernel;
 
     /**
+     * AbstractServer constructor.
+     *
+     * @param ServerProcessKernel $processKernel
+     */
+    public function __construct(ServerProcessKernel $processKernel)
+    {
+        $this->processKernel = $processKernel;
+    }
+
+
+    /**
      * @return SwooleServer|SwooleHttpServer|SwooleWebsocketServer
      */
     abstract public function createSwooleServerInstance();
