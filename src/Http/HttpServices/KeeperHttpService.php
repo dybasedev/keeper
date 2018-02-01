@@ -1,43 +1,49 @@
 <?php
 /**
- * BaseKernel.php
+ * BaseHttpService.php
  *
  * @copyright Chongyi <xpz3847878@163.com>
  * @link      https://insp.top
  */
 
-namespace Dybasedev\Keeper\Http\ProcessKernels;
+namespace Dybasedev\Keeper\Http\HttpServices;
 
 use Closure;
-use Dybasedev\Keeper\Http\Response;
-use FastRoute\Dispatcher;
-use Illuminate\Contracts\Container\Container;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
-use Dybasedev\Keeper\Http\ConfigurationLoader;
-use Dybasedev\Keeper\Http\Interfaces\HttpService;
-use Dybasedev\Keeper\Http\LifecycleContainer;
-use Dybasedev\Keeper\Http\Request;
-use Dybasedev\Keeper\Routing\Router;
-use InvalidArgumentException;
+use RuntimeException;
 use Swoole\Http\Request as SwooleHttpRequest;
 use Swoole\Http\Response as SwooleHttpResponse;
 use Swoole\Http\Server as SwooleHttpServer;
-use Dybasedev\Keeper\Server\Interfaces\HttpServerProcessKernel;
+use InvalidArgumentException;
+use Dybasedev\Keeper\Http\Interfaces\HttpService;
+use Dybasedev\Keeper\Routing\Router;
+use Illuminate\Contracts\Container\Container;
+use Dybasedev\Keeper\Http\Response;
+use FastRoute\Dispatcher;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Dybasedev\Keeper\Http\ConfigurationLoader;
+use Dybasedev\Keeper\Http\LifecycleContainer;
+use Dybasedev\Keeper\Http\Request;
 use Illuminate\Contracts\Config\Repository as Configuration;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
-class BaseKernel implements HttpServerProcessKernel, HttpService
+class KeeperHttpService implements HttpService
 {
     /**
      * @var Container
      */
     protected $container;
 
+    /**
+     * @var string
+     */
     protected $basePath;
 
+    /**
+     * @var array
+     */
     protected $paths = [];
 
     /**
@@ -61,63 +67,6 @@ class BaseKernel implements HttpServerProcessKernel, HttpService
         if (!$this->basePath) {
             throw new InvalidArgumentException('Invalid base path.');
         }
-    }
-
-
-    public function onRequest(): Closure
-    {
-        return function (SwooleHttpRequest $request, SwooleHttpResponse $response) {
-            $this->process($request, $response);
-        };
-    }
-
-    public function onStart(): Closure
-    {
-        return function () {
-
-        };
-    }
-
-    public function onShutdown(): Closure
-    {
-        return function () {
-
-        };
-    }
-
-    public function onWorkerStart(): Closure
-    {
-        return function (SwooleHttpServer $server, $workerId) {
-            $this->init($server, $workerId);
-        };
-    }
-
-    public function onWorkerStop(): Closure
-    {
-        return function (SwooleHttpServer $server, $workerId) {
-            $this->destroy($server, $workerId);
-        };
-    }
-
-    public function onWorkerError(): Closure
-    {
-        return function () {
-
-        };
-    }
-
-    public function onManagerStart(): Closure
-    {
-        return function () {
-
-        };
-    }
-
-    public function onManagerStop(): Closure
-    {
-        return function () {
-
-        };
     }
 
     public function basePath($path = null): string
@@ -179,6 +128,8 @@ class BaseKernel implements HttpServerProcessKernel, HttpService
 
                 return $this->container->call($callable, $parameters);
         }
+
+        throw new RuntimeException();
     }
 
     public function process(SwooleHttpRequest $request, SwooleHttpResponse $response)
@@ -220,6 +171,4 @@ class BaseKernel implements HttpServerProcessKernel, HttpService
     {
 
     }
-
-
 }
