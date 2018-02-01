@@ -9,6 +9,9 @@
 namespace Dybasedev\Keeper\Http\HttpServices;
 
 use Closure;
+use Dybasedev\Keeper\Http\Interfaces\WorkerHookDelegation;
+use Dybasedev\Keeper\Module\Interfaces\DestructibleModuleProvider;
+use Dybasedev\Keeper\Module\Interfaces\ModuleProvider;
 use RuntimeException;
 use Swoole\Http\Request as SwooleHttpRequest;
 use Swoole\Http\Response as SwooleHttpResponse;
@@ -50,6 +53,21 @@ class KeeperHttpService implements HttpService
      * @var Router
      */
     protected $router;
+
+    /**
+     * @var array
+     */
+    protected $destructibleModules = [];
+
+    /**
+     * @var array
+     */
+    protected $processBeginHooks = [];
+
+    /**
+     * @var array
+     */
+    protected $processEndHooks = [];
 
     /**
      * BaseKernel constructor.
@@ -98,11 +116,76 @@ class KeeperHttpService implements HttpService
         $this->container['server'] = $server;
         $this->container['worker'] = $workerId;
 
+        // Create hook delegation
+        $this->container->instance(WorkerHookDelegation::class, $this->createWorkerHookDelegation());
+
         // Load configuration
         $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
 
         // Load http service routes
         $this->router = (new Router($config->get('router.registers', [])))->mount();
+
+        // Load Modules
+        $this->loadModules($config->get('app.modules', []));
+    }
+
+    public function onProcessBegin(Closure $callback)
+    {
+        $this->processBeginHooks[] = $callback;
+    }
+
+    public function onProcessEnd(Closure $callback)
+    {
+        $this->processEndHooks[] = $callback;
+    }
+
+    /**
+     * @return WorkerHookDelegation
+     */
+    protected function createWorkerHookDelegation()
+    {
+        return new class($this) implements WorkerHookDelegation {
+
+            private $delegation;
+
+            public function __construct(KeeperHttpService $delegation)
+            {
+                $this->delegation = $delegation;
+            }
+
+            public function processBegin(Closure $callback)
+            {
+                $this->delegation->onProcessBegin($callback);
+            }
+
+            public function processEnd(Closure $callback)
+            {
+                $this->delegation->onProcessBegin($callback);
+            }
+
+        };
+    }
+
+    protected function loadModules($modules)
+    {
+        /** @var ModuleProvider[] $moduleProviders */
+        $moduleProviders = [];
+
+        foreach ($modules as $module) {
+            $moduleProvider = new $module;
+            if ($moduleProvider instanceof ModuleProvider) {
+                if ($moduleProvider instanceof DestructibleModuleProvider) {
+                    $this->destructibleModules[] = $moduleProvider;
+                }
+
+                $moduleProvider->register($this->container);
+                $moduleProviders[] = $moduleProvider;
+            }
+        }
+
+        foreach ($moduleProviders as $provider) {
+            $provider->mount($this->container);
+        }
     }
 
     protected function handle(Request $request)
@@ -135,6 +218,11 @@ class KeeperHttpService implements HttpService
     public function process(SwooleHttpRequest $request, SwooleHttpResponse $response)
     {
         try {
+            // trigger: process begin
+            foreach ($this->processBeginHooks as $hook) {
+                ($hook)();
+            }
+
             $keeperRequest  = Request::createFromSwooleRequest($request);
             $keeperResponse = $this->handle($keeperRequest);
 
@@ -142,8 +230,15 @@ class KeeperHttpService implements HttpService
                  ->setSwooleResponse($response)
                  ->send();
 
-            unset($illuminateRequest);
+            unset($keeperRequest);
             unset($keeperResponse);
+
+            // trigger: process end
+            foreach ($this->processEndHooks as $hook) {
+                ($hook)();
+            }
+
+            unset($hook);
 
             gc_collect_cycles();
         } catch (Throwable $exception) {
