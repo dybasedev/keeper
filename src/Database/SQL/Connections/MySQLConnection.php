@@ -17,7 +17,7 @@ class MySQLConnection extends Connection
     /**
      * @return PDO
      */
-    protected function createPdoInstance(): PDO
+    protected function createDriverInstance(): PDO
     {
         if (isset($this->options['unix_socket'])) {
             $dsn = sprintf('mysql:unix_socket=%s;dbname=%s;charset=%s',
@@ -42,4 +42,21 @@ class MySQLConnection extends Connection
         return $pdo;
     }
 
+    /**
+     * @throws \Throwable
+     */
+    protected function createSavePoint()
+    {
+        $this->execute('SAVEPOINT ' . ($this->transactions + 1));
+    }
+
+    /**
+     * @param $toLevel
+     *
+     * @throws \Throwable
+     */
+    protected function rollbackSavePoint($toLevel)
+    {
+        $this->execute('ROLLBACK TO SAVEPOINT ' . $toLevel);
+    }
 }
