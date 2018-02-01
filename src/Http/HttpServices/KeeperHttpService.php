@@ -10,6 +10,7 @@ namespace Dybasedev\Keeper\Http\HttpServices;
 
 use Closure;
 use Dybasedev\Keeper\Http\Interfaces\WorkerHookDelegation;
+use Dybasedev\Keeper\Http\KeeperBaseController;
 use Dybasedev\Keeper\Module\Interfaces\DestructibleModuleProvider;
 use Dybasedev\Keeper\Module\Interfaces\ModuleProvider;
 use RuntimeException;
@@ -200,6 +201,12 @@ class KeeperHttpService implements HttpService
                 if (is_array($route[1])) {
                     list($controller, $action) = $route[1];
                     $controllerInstance = new $controller;
+
+                    if ($controllerInstance instanceof KeeperBaseController) {
+                        $controllerInstance->setRequest($request);
+                        $controllerInstance->setContainer($this->container);
+                    }
+
                     $callable = [$controllerInstance, $action];
                 } else if ($route[1] instanceof Closure) {
                     $callable = $route[1];
