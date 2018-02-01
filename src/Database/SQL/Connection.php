@@ -44,6 +44,17 @@ abstract class Connection
     protected $transactions = 0;
 
     /**
+     * Connection constructor.
+     *
+     * @param array $options
+     */
+    public function __construct(array $options)
+    {
+        $this->options = $options;
+    }
+
+
+    /**
      * Create PDO instance
      *
      * @return PDO

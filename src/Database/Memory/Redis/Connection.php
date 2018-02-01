@@ -9,9 +9,30 @@
 namespace Dybasedev\Keeper\Database\Memory\Redis;
 
 
+use Redis;
+
 abstract class Connection
 {
+    /**
+     * @var array
+     */
+    protected $options;
+
+    /**
+     * @var Redis
+     */
     protected $redisInstance;
+
+    /**
+     * Connection constructor.
+     *
+     * @param array $options
+     */
+    public function __construct(array $options)
+    {
+        $this->options = $options;
+    }
+
 
     abstract protected function createDriverInstance();
 
