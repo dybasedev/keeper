@@ -8,9 +8,6 @@
 
 namespace Dybasedev\Keeper\Routing;
 
-
-use FastRoute\RouteCollector;
-
 abstract class RouteRegister
 {
     abstract public function register(RouteCollector $collector);

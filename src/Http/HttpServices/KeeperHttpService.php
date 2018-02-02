@@ -13,6 +13,7 @@ use Dybasedev\Keeper\Http\Interfaces\WorkerHookDelegation;
 use Dybasedev\Keeper\Http\KeeperBaseController;
 use Dybasedev\Keeper\Module\Interfaces\DestructibleModuleProvider;
 use Dybasedev\Keeper\Module\Interfaces\ModuleProvider;
+use Dybasedev\Keeper\Routing\Pipeline;
 use RuntimeException;
 use Swoole\Http\Request as SwooleHttpRequest;
 use Swoole\Http\Response as SwooleHttpResponse;
@@ -113,7 +114,7 @@ class KeeperHttpService implements HttpService
     public function init(SwooleHttpServer $server, $workerId)
     {
         // Create lifecycle container
-        $this->container = new LifecycleContainer();
+        $this->container           = new LifecycleContainer();
         $this->container['server'] = $server;
         $this->container['worker'] = $workerId;
 
@@ -124,7 +125,7 @@ class KeeperHttpService implements HttpService
         $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
 
         // Load http service routes
-        $this->router = (new Router($config->get('router.registers', [])))->mount();
+        $this->router = (new Router($config->get('router.registers', [])))->setContainer($this->container)->mount();
 
         // Load Modules
         $this->loadModules($config->get('app.modules', []));
@@ -145,7 +146,8 @@ class KeeperHttpService implements HttpService
      */
     protected function createWorkerHookDelegation()
     {
-        return new class($this) implements WorkerHookDelegation {
+        return new class($this) implements WorkerHookDelegation
+        {
 
             private $delegation;
 
@@ -191,6 +193,35 @@ class KeeperHttpService implements HttpService
 
     protected function handle(Request $request)
     {
+        try {
+            list($routeInformation, $parameters) = $this->findRoute($request);
+
+            (new Pipeline($this->container))
+                ->through($routeInformation['middlewares'])
+                ->send($request)
+                ->then(function (Request $request) use ($routeInformation, $parameters) {
+                    if ($routeInformation['action'] instanceof Closure) {
+                        return $this->container->call($routeInformation['action'], $parameters);
+                    }
+
+                    list($controller, $action) = $routeInformation['action'];
+                    $controllerInstance = new $controller;
+
+                    if ($controllerInstance instanceof KeeperBaseController) {
+                        $controllerInstance->setContainer($this->container);
+                        $controllerInstance->setRequest($request);
+                    }
+
+                    return $this->container->call([$controllerInstance, $action], $parameters);
+                });
+
+        } catch (Throwable $exception) {
+
+        }
+    }
+
+    public function findRoute(Request $request)
+    {
         $route = $this->router->dispatch($request->getMethod(), '/' . trim($request->getPathInfo(), '/'));
         switch ($route[0]) {
             case Dispatcher::NOT_FOUND:
@@ -198,25 +229,7 @@ class KeeperHttpService implements HttpService
             case Dispatcher::METHOD_NOT_ALLOWED:
                 throw new MethodNotAllowedHttpException($route[1]);
             case Dispatcher::FOUND:
-                if (is_array($route[1])) {
-                    list($controller, $action) = $route[1];
-                    $controllerInstance = new $controller;
-
-                    if ($controllerInstance instanceof KeeperBaseController) {
-                        $controllerInstance->setRequest($request);
-                        $controllerInstance->setContainer($this->container);
-                    }
-
-                    $callable = [$controllerInstance, $action];
-                } else if ($route[1] instanceof Closure) {
-                    $callable = $route[1];
-                } else {
-                    $callable = $route[1];
-                }
-
-                $parameters = $route[2] ?? [];
-
-                return $this->container->call($callable, $parameters);
+                return [$route[1], $route[2] ?? []];
         }
 
         throw new RuntimeException();

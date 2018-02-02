@@ -8,11 +8,11 @@
 
 namespace Dybasedev\Keeper\Routing;
 
-
 use FastRoute\DataGenerator\GroupCountBased;
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector as FastRouteCollector;
 use FastRoute\RouteParser\Std;
+use Illuminate\Contracts\Container\Container;
 
 class Router
 {
@@ -22,7 +22,7 @@ class Router
     protected $registers;
 
     /**
-     * @var FastRouteCollector
+     * @var RouteCollector
      */
     protected $routeCollector;
 
@@ -30,6 +30,11 @@ class Router
      * @var Dispatcher
      */
     protected $dispatcher;
+
+    /**
+     * @var Container
+     */
+    protected $container;
 
     /**
      * Router constructor.
@@ -40,7 +45,19 @@ class Router
     {
         $this->registers = $registers;
 
-        $this->routeCollector = new FastRouteCollector(new Std(), new GroupCountBased());
+        $this->routeCollector = new RouteCollector(new FastRouteCollector(new Std(), new GroupCountBased()));
+    }
+
+    /**
+     * @param Container $container
+     *
+     * @return Router
+     */
+    public function setContainer(Container $container): Router
+    {
+        $this->container = $container;
+
+        return $this;
     }
 
     /**
@@ -56,7 +73,7 @@ class Router
             $registerInstance->register($this->routeCollector);
         }
 
-        return $this->routeCollector->getData();
+        return $this->routeCollector->setContainer($this->container)->getData();
     }
 
     public function mount(array $data = null)
