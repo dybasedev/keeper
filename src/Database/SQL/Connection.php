@@ -128,7 +128,12 @@ abstract class Connection
 
         if (is_array($binder)) {
             $binder = function (PDOStatement $statement) use ($binder) {
-                $this->bindValues($statement, $binder);
+                foreach ($binder as $key => $value) {
+                    $statement->bindValue(
+                        is_string($key) ? $key : $key + 1, $value,
+                        is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR
+                    );
+                }
             };
         }
 
