@@ -6,10 +6,9 @@
  * @link      https://insp.top
  */
 
-namespace Dybasedev\Keeper\Database\SQL;
+namespace Dybasedev\Keeper\Database\Memory\Redis;
 
 use Dybasedev\Keeper\Database\ConnectionManager as BaseConnectionManager;
-use Dybasedev\Keeper\Database\SQL\Connections\MySQLConnection;
 use RuntimeException;
 
 class ConnectionManager extends BaseConnectionManager
@@ -17,10 +16,11 @@ class ConnectionManager extends BaseConnectionManager
     public function createConnection($name)
     {
         switch ($this->config['connections'][$name]['driver']) {
-            case 'mysql':
-                return new MySQLConnection($this->config['connections'][$name]);
+            case 'phpredis':
+                return new PhpRedisConnection($this->config['connections'][$name]);
             default:
                 throw new RuntimeException();
         }
     }
+
 }
