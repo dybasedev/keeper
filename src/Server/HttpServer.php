@@ -24,7 +24,17 @@ class HttpServer extends AbstractServer
 {
     protected $ssl = false;
 
-    protected $settings;
+    /**
+     * @param bool $ssl
+     *
+     * @return $this
+     */
+    public function ssl(bool $ssl = true)
+    {
+        $this->ssl = $ssl;
+
+        return $this;
+    }
 
     /**
      * @return SwooleServer|SwooleHttpServer|SwooleWebsocketServer

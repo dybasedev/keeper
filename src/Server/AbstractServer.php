@@ -20,6 +20,11 @@ abstract class AbstractServer
     protected $port = 11780;
 
     /**
+     * @var array
+     */
+    protected $settings;
+
+    /**
      * @var SwooleServer|SwooleHttpServer|SwooleWebsocketServer
      */
     protected $serverInstance;
@@ -30,6 +35,42 @@ abstract class AbstractServer
     protected $processKernel;
 
     /**
+     * @param array $setting
+     *
+     * @return $this
+     */
+    public function setting(array $setting)
+    {
+        $this->settings = $setting;
+
+        return $this;
+    }
+
+    /**
+     * @param string $host
+     *
+     * @return $this
+     */
+    public function host(string $host)
+    {
+        $this->host = $host;
+
+        return $this;
+    }
+
+    /**
+     * @param int $port
+     *
+     * @return $this
+     */
+    public function port(int $port)
+    {
+        $this->port = $port;
+
+        return $this;
+    }
+
+    /**
      * AbstractServer constructor.
      *
      * @param ServerProcessKernel $processKernel
@@ -38,7 +79,6 @@ abstract class AbstractServer
     {
         $this->processKernel = $processKernel;
     }
-
 
     /**
      * @return SwooleServer|SwooleHttpServer|SwooleWebsocketServer
