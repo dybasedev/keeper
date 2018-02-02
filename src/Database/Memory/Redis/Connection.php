@@ -8,31 +8,20 @@
 
 namespace Dybasedev\Keeper\Database\Memory\Redis;
 
-
 use Redis;
+use Dybasedev\Keeper\Database\Connection as BaseConnection;
 
-abstract class Connection
+/**
+ * Redis connection
+ *
+ * @package Dybasedev\Keeper\Database\Memory\Redis
+ */
+abstract class Connection extends BaseConnection
 {
-    /**
-     * @var array
-     */
-    protected $options;
-
     /**
      * @var Redis
      */
     protected $redisInstance;
-
-    /**
-     * Connection constructor.
-     *
-     * @param array $options
-     */
-    public function __construct(array $options)
-    {
-        $this->options = $options;
-    }
-
 
     abstract protected function createDriverInstance();
 
@@ -52,5 +41,10 @@ abstract class Connection
     public function disconnect()
     {
         $this->redisInstance = null;
+    }
+
+    public function __call($method, array $parameters)
+    {
+        return $this->redisInstance->{$method}(...$parameters);
     }
 }

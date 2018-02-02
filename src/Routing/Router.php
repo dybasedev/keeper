@@ -11,7 +11,7 @@ namespace Dybasedev\Keeper\Routing;
 
 use FastRoute\DataGenerator\GroupCountBased;
 use FastRoute\Dispatcher;
-use FastRoute\RouteCollector;
+use FastRoute\RouteCollector as FastRouteCollector;
 use FastRoute\RouteParser\Std;
 
 class Router
@@ -22,7 +22,7 @@ class Router
     protected $registers;
 
     /**
-     * @var RouteCollector
+     * @var FastRouteCollector
      */
     protected $routeCollector;
 
@@ -40,7 +40,7 @@ class Router
     {
         $this->registers = $registers;
 
-        $this->routeCollector = new RouteCollector(new Std(), new GroupCountBased());
+        $this->routeCollector = new FastRouteCollector(new Std(), new GroupCountBased());
     }
 
     /**

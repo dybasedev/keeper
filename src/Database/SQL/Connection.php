@@ -10,6 +10,7 @@ namespace Dybasedev\Keeper\Database\SQL;
 
 use Closure;
 use Exception;
+use Dybasedev\Keeper\Database\Connection as BaseConnection;
 use Illuminate\Database\DetectsDeadlocks;
 use Illuminate\Database\DetectsLostConnections;
 use PDO;
@@ -24,7 +25,7 @@ use Throwable;
  *
  * @package Dybasedev\Keeper\Database\SQL
  */
-abstract class Connection
+abstract class Connection extends BaseConnection
 {
     use DetectsDeadlocks, DetectsLostConnections;
 
@@ -34,25 +35,9 @@ abstract class Connection
     protected $pdoInstance;
 
     /**
-     * @var array
-     */
-    protected $options;
-
-    /**
      * @var int
      */
     protected $transactions = 0;
-
-    /**
-     * Connection constructor.
-     *
-     * @param array $options
-     */
-    public function __construct(array $options)
-    {
-        $this->options = $options;
-    }
-
 
     /**
      * Create PDO instance
@@ -116,10 +101,15 @@ abstract class Connection
     {
         return $this->process($statement, function (PDOStatement $statement) use ($binder) {
             $this->bindValues($statement, $binder);
+
             return $statement->execute();
         });
     }
 
+    /**
+     * @param PDOStatement  $statement
+     * @param array|Closure $binder
+     */
     protected function bindValues(PDOStatement $statement, $binder)
     {
         if (is_null($binder)) {
@@ -162,7 +152,17 @@ abstract class Connection
         });
     }
 
-
+    /**
+     * Get last insert id
+     *
+     * @param null $name
+     *
+     * @return string
+     */
+    public function lastInsertId($name = null)
+    {
+        return $this->getDriverInstance()->lastInsertId($name);
+    }
 
     /**
      * Execute a Closure within a transaction.
