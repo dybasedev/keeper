@@ -191,6 +191,13 @@ class KeeperHttpService implements HttpService
         }
     }
 
+    /**
+     * Handle Http request and return processed result
+     *
+     * @param Request $request
+     *
+     * @return mixed
+     */
     protected function handle(Request $request)
     {
         try {
