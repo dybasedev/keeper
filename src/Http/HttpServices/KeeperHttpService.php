@@ -196,7 +196,7 @@ class KeeperHttpService implements HttpService
         try {
             list($routeInformation, $parameters) = $this->findRoute($request);
 
-            (new Pipeline($this->container))
+            return (new Pipeline($this->container))
                 ->through($routeInformation['middlewares'])
                 ->send($request)
                 ->then(function (Request $request) use ($routeInformation, $parameters) {
