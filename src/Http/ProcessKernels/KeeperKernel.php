@@ -17,12 +17,6 @@ use Dybasedev\Keeper\Server\Interfaces\HttpServerProcessKernel;
 
 class KeeperKernel implements HttpServerProcessKernel
 {
-    const MASTER_PROCESS = 1;
-
-    const MANAGER_PROCESS = 2;
-
-    const WORKER_PROCESS = 3;
-
     /**
      * @var HttpService
      */
