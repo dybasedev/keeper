@@ -17,6 +17,10 @@ use Closure;
  */
 interface ServerProcessKernel
 {
+    const WORKER_PROCESS  = 3;
+    const MASTER_PROCESS  = 1;
+    const MANAGER_PROCESS = 2;
+
     public function onStart(): Closure;
     public function onShutdown(): Closure;
     public function onWorkerStart(): Closure;
