@@ -68,9 +68,17 @@ class HttpServer extends AbstractServer
         $server->on('workerError', $this->processKernel->onWorkerError());
         $server->on('managerStart', $this->processKernel->onManagerStart());
         $server->on('managerStop', $this->processKernel->onManagerStop());
-        $server->on('request', $this->processKernel->onRequest());
+
+        $this->bindRequestHandler($server);
 
         return $this;
     }
 
+    /**
+     * @param SwooleServer|SwooleHttpServer|SwooleWebsocketServer $server
+     */
+    protected function bindRequestHandler($server)
+    {
+        $server->on('request', $this->processKernel->onRequest());
+    }
 }
