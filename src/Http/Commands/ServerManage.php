@@ -8,21 +8,14 @@
 
 namespace Dybasedev\Keeper\Http\Commands;
 
-use Dybasedev\Keeper\Http\Kernel;
-use Dybasedev\Keeper\Http\Server;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ServerManageCommand extends Command
+abstract class ServerManage extends Command
 {
-    /**
-     * @var Kernel
-     */
-    protected $handler;
-
     public $host;
 
     public $port;
@@ -44,8 +37,8 @@ class ServerManageCommand extends Command
                  'Send signal to master process, support: start, stop, restart, reload', 'start')
              ->addOption('host', 'H', InputOption::VALUE_OPTIONAL, 'Server host')
              ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'Server port')
-             ->addOption('pid_file', 'P', InputOption::VALUE_OPTIONAL, 'PID File path.')
-             ->addOption('log_file', 'l', InputOption::VALUE_OPTIONAL, 'Log file path.')
+             ->addOption('pid', 'P', InputOption::VALUE_OPTIONAL, 'PID File path.')
+             ->addOption('log', 'l', InputOption::VALUE_OPTIONAL, 'Log file path.')
              ->addOption('daemon', 'D', InputOption::VALUE_NONE)
              ->addOption('nodaemon', 'N', InputOption::VALUE_NONE);
     }

@@ -17,10 +17,21 @@ use Dybasedev\Keeper\Server\Interfaces\HttpServerProcessKernel;
 
 class KeeperKernel implements HttpServerProcessKernel
 {
+    const MASTER_PROCESS = 1;
+
+    const MANAGER_PROCESS = 2;
+
+    const WORKER_PROCESS = 3;
+
     /**
      * @var HttpService
      */
     protected $httpService;
+
+    /**
+     * @var array
+     */
+    protected $processNames = [];
 
     /**
      * KeeperKernel constructor.
@@ -30,6 +41,19 @@ class KeeperKernel implements HttpServerProcessKernel
     public function __construct(HttpService $httpService)
     {
         $this->httpService = $httpService;
+    }
+
+    /**
+     * @param $process
+     * @param $name
+     *
+     * @return $this
+     */
+    public function setProcessName($process, $name)
+    {
+        $this->processNames[$process] = $name;
+
+        return $this;
     }
 
     public function onRequest(): Closure
@@ -42,7 +66,7 @@ class KeeperKernel implements HttpServerProcessKernel
     public function onStart(): Closure
     {
         return function () {
-
+            cli_set_process_title($this->processNames[self::MASTER_PROCESS] ?? 'keeper:master');
         };
     }
 
@@ -56,6 +80,7 @@ class KeeperKernel implements HttpServerProcessKernel
     public function onWorkerStart(): Closure
     {
         return function (SwooleHttpServer $server, $workerId) {
+            cli_set_process_title($this->processNames[self::WORKER_PROCESS] ?? 'keeper:worker');
             $this->httpService->init($server, $workerId);
         };
     }
@@ -77,7 +102,7 @@ class KeeperKernel implements HttpServerProcessKernel
     public function onManagerStart(): Closure
     {
         return function () {
-
+            cli_set_process_title($this->processNames[self::MANAGER_PROCESS] ?? 'keeper:manager');
         };
     }
 
