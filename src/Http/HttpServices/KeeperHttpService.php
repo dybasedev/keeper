@@ -12,7 +12,6 @@ use Closure;
 use Dybasedev\Keeper\Http\Interfaces\ExceptionHandler;
 use Dybasedev\Keeper\Http\Interfaces\WorkerHookDelegation;
 use Dybasedev\Keeper\Http\KeeperBaseController;
-use Dybasedev\Keeper\Http\HttpServiceExceptionHandler;
 use Dybasedev\Keeper\Module\Interfaces\DestructibleModuleProvider;
 use Dybasedev\Keeper\Module\Interfaces\ModuleProvider;
 use Dybasedev\Keeper\Routing\Pipeline;
