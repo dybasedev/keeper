@@ -141,6 +141,11 @@ class KeeperHttpService implements HttpService
         // Create hook delegation
         $this->container->instance(WorkerHookDelegation::class, $this->createWorkerHookDelegation());
 
+        // Bind exception handler
+        if ($this->exceptionHandler) {
+            $this->container->instance(ExceptionHandler::class, $this->exceptionHandler);
+        }
+
         // Load configuration
         $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
 
