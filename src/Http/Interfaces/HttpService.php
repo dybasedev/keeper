@@ -14,8 +14,24 @@ use Swoole\Http\Response;
 
 interface HttpService
 {
+    /**
+     * Initialize something
+     *
+     * @param SwooleHttpServer $server
+     * @param                  $workerId
+     *
+     * @return mixed
+     */
     public function init(SwooleHttpServer $server, $workerId);
 
+    /**
+     * Http service provide process
+     *
+     * @param Request  $request
+     * @param Response $response
+     *
+     * @return mixed
+     */
     public function process(Request $request, Response $response);
 
     public function destroy(SwooleHttpServer $server, $workerId);

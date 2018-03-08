@@ -55,6 +55,8 @@ class HttpServer extends AbstractServer
     }
 
     /**
+     * Bind events
+     *
      * @param SwooleServer|SwooleHttpServer|SwooleWebsocketServer $server
      *
      * @return $this

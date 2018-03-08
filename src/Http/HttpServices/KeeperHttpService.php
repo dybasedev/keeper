@@ -9,8 +9,10 @@
 namespace Dybasedev\Keeper\Http\HttpServices;
 
 use Closure;
+use Dybasedev\Keeper\Http\Interfaces\ExceptionHandler;
 use Dybasedev\Keeper\Http\Interfaces\WorkerHookDelegation;
 use Dybasedev\Keeper\Http\KeeperBaseController;
+use Dybasedev\Keeper\Http\HttpServiceExceptionHandler;
 use Dybasedev\Keeper\Module\Interfaces\DestructibleModuleProvider;
 use Dybasedev\Keeper\Module\Interfaces\ModuleProvider;
 use Dybasedev\Keeper\Routing\Pipeline;
@@ -20,7 +22,8 @@ use Swoole\Http\Response as SwooleHttpResponse;
 use Swoole\Http\Server as SwooleHttpServer;
 use InvalidArgumentException;
 use Dybasedev\Keeper\Http\Interfaces\HttpService;
-use Dybasedev\Keeper\Routing\Router;
+use Dybasedev\Keeper\Routing\Router as KeeperRouter;
+use Dybasedev\Keeper\Routing\Interfaces\Router;
 use Illuminate\Contracts\Container\Container;
 use Dybasedev\Keeper\Http\Response;
 use FastRoute\Dispatcher;
@@ -57,7 +60,7 @@ class KeeperHttpService implements HttpService
     protected $router;
 
     /**
-     * @var array
+     * @var array|DestructibleModuleProvider[]
      */
     protected $destructibleModules = [];
 
@@ -70,6 +73,11 @@ class KeeperHttpService implements HttpService
      * @var array
      */
     protected $processEndHooks = [];
+
+    /**
+     * @var ExceptionHandler
+     */
+    protected $exceptionHandler;
 
     /**
      * BaseKernel constructor.
@@ -111,10 +119,22 @@ class KeeperHttpService implements HttpService
         return $this->basePath($name);
     }
 
+    /**
+     * @param ConfigurationLoader $config
+     *
+     * @return Router
+     */
+    public function getRouter(ConfigurationLoader $config)
+    {
+        return (new KeeperRouter($config->get('router.registers')))->setContainer($this->container);
+    }
+
     public function init(SwooleHttpServer $server, $workerId)
     {
         // Create lifecycle container
-        $this->container           = new LifecycleContainer();
+        $this->container = new LifecycleContainer();
+
+        // Bind context data to container
         $this->container['server'] = $server;
         $this->container['worker'] = $workerId;
 
@@ -125,7 +145,7 @@ class KeeperHttpService implements HttpService
         $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
 
         // Load http service routes
-        $this->router = (new Router($config->get('router.registers', [])))->setContainer($this->container)->mount();
+        $this->router = $this->getRouter($config)->mount();
 
         // Load Modules
         $this->loadModules($config->get('app.modules', []));
@@ -223,7 +243,11 @@ class KeeperHttpService implements HttpService
                 });
 
         } catch (Throwable $exception) {
+            if ($this->exceptionHandler) {
+                return $this->exceptionHandler->handle($exception);
+            }
 
+            return new Response((string)$exception, 500);
         }
     }
 
@@ -250,7 +274,7 @@ class KeeperHttpService implements HttpService
                 ($hook)();
             }
 
-            $keeperRequest  = Request::createFromSwooleRequest($request);
+            $keeperRequest = Request::createFromSwooleRequest($request);
             $keeperResponse = $this->handle($keeperRequest);
 
             $this->prepareResponse($keeperResponse)
@@ -273,6 +297,13 @@ class KeeperHttpService implements HttpService
         }
     }
 
+    public function setExceptionHandler(ExceptionHandler $handler)
+    {
+        $this->exceptionHandler = $handler;
+
+        return $this;
+    }
+
     protected function prepareResponse($response)
     {
         if (!$response instanceof Response) {
@@ -291,6 +322,8 @@ class KeeperHttpService implements HttpService
 
     public function destroy(SwooleHttpServer $server, $workerId)
     {
-
+        foreach ($this->destructibleModules as $module) {
+            $module->destroy($this->container);
+        }
     }
 }

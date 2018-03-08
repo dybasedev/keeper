@@ -8,13 +8,14 @@
 
 namespace Dybasedev\Keeper\Routing;
 
+use Dybasedev\Keeper\Routing\Interfaces\Router as RouterInterface;
 use FastRoute\DataGenerator\GroupCountBased;
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector as FastRouteCollector;
 use FastRoute\RouteParser\Std;
 use Illuminate\Contracts\Container\Container;
 
-class Router
+class Router implements RouterInterface
 {
     /**
      * @var array
@@ -87,6 +88,12 @@ class Router
         return $this;
     }
 
+    /**
+     * @param string $method
+     * @param string $uri
+     *
+     * @return array
+     */
     public function dispatch($method, $uri)
     {
         return $this->dispatcher->dispatch($method, $uri);

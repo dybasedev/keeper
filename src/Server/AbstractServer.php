@@ -13,10 +13,21 @@ use Swoole\Server as SwooleServer;
 use Swoole\Http\Server as SwooleHttpServer;
 use Swoole\WebSocket\Server as SwooleWebsocketServer;
 
+/**
+ * Base server class
+ *
+ * @package Dybasedev\Keeper\Server
+ */
 abstract class AbstractServer
 {
+    /**
+     * @var string
+     */
     protected $host = '0.0.0.0';
 
+    /**
+     * @var int
+     */
     protected $port = 11780;
 
     /**
@@ -47,6 +58,8 @@ abstract class AbstractServer
     }
 
     /**
+     * Set server host
+     *
      * @param string $host
      *
      * @return $this
@@ -59,6 +72,8 @@ abstract class AbstractServer
     }
 
     /**
+     * Set server port
+     *
      * @param int $port
      *
      * @return $this
