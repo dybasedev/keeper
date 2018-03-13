@@ -29,7 +29,7 @@ use FastRoute\Dispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Dybasedev\Keeper\Http\ConfigurationLoader;
-use Dybasedev\Keeper\Http\LifecycleContainer;
+use Dybasedev\Keeper\Module\LifecycleContainer;
 use Dybasedev\Keeper\Http\Request;
 use Illuminate\Contracts\Config\Repository as Configuration;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;

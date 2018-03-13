@@ -6,7 +6,7 @@
  * @link      https://insp.top
  */
 
-namespace Dybasedev\Keeper\Http;
+namespace Dybasedev\Keeper\Module;
 
 use Illuminate\Container\Container;
 
