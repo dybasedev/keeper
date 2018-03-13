@@ -20,6 +20,9 @@ use Swoole\Http\Request as SwooleRequest;
  */
 class Request extends SymfonyRequest
 {
+    /** @var int swoole request fd */
+    protected $fd;
+    
     /**
      * 从 Swoole Request 实例创建请求实体
      *
@@ -35,20 +38,43 @@ class Request extends SymfonyRequest
         } else {
             $server = [];
         }
-
+        
         if (isset($request->header)) {
             $keys = array_map(function ($value) {
                 return 'HTTP_' . str_replace('-', '_', strtoupper($value));
             }, array_keys($request->header));
             $server = array_merge($server, array_combine($keys, array_values($request->header)));
         }
-
-        $_GET    = isset($request->get) ? $request->get : [];
-        $_POST   = isset($request->post) ? $request->post : [];
-        $_FILES  = isset($request->files) ? $request->files : [];
+        
+        $_GET = isset($request->get) ? $request->get : [];
+        $_POST = isset($request->post) ? $request->post : [];
+        $_FILES = isset($request->files) ? $request->files : [];
         $_COOKIE = isset($request->cookie) ? $request->cookie : [];
         $_SERVER = $server;
-
-        return new static($_GET, $_POST, [], $_COOKIE, $_FILES, $server);
+        
+        return (new static($_GET, $_POST, [], $_COOKIE, $_FILES, $server))->setFd($request->fd);
     }
+    
+    /**
+     * 设置fd
+     *
+     * @param int $fd
+     *
+     * @return $this
+     */
+    protected function setFd(int $fd)
+    {
+        $this->fd = $fd;
+        
+        return $this;
+    }
+    
+    /**
+     * @return int
+     */
+    public function getFd()
+    {
+        return $this->fd;
+    }
+    
 }

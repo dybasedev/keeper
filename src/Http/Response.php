@@ -23,7 +23,7 @@ class Response extends SymfonyResponse
      * @var SwooleResponse
      */
     protected $swooleResponse;
-
+    
     /**
      * @param SwooleResponse $swooleResponse
      *
@@ -32,10 +32,10 @@ class Response extends SymfonyResponse
     public function setSwooleResponse(SwooleResponse $swooleResponse)
     {
         $this->swooleResponse = $swooleResponse;
-
+        
         return $this;
     }
-
+    
     /**
      * @return SwooleResponse
      */
@@ -43,7 +43,7 @@ class Response extends SymfonyResponse
     {
         return $this->swooleResponse;
     }
-
+    
     /**
      * @inheritDoc
      */
@@ -53,37 +53,62 @@ class Response extends SymfonyResponse
         if (!$this->headers->has('Date')) {
             $this->setDate(\DateTime::createFromFormat('U', time()));
         }
-
+        
         // headers
         foreach ($this->headers->allPreserveCaseWithoutCookies() as $name => $values) {
             foreach ($values as $value) {
                 $this->getSwooleResponse()->header($name, $value);
             }
         }
-
+        
         // status
         $this->getSwooleResponse()->status($this->statusCode);
-
+        
         // cookies
         /** @var Cookie $cookie */
         foreach ($this->headers->getCookies() as $cookie) {
             $this->swooleResponse->cookie($cookie->getName(), $cookie->getValue(), $cookie->getExpiresTime(),
                 $cookie->getPath(), $cookie->getDomain(), $cookie->isSecure(), $cookie->isHttpOnly());
         }
-
+        
         return $this;
     }
-
+    
+    /**
+     * @param string $key
+     * @param string $value
+     * @return Response
+     */
+    public function addHeader(string $key, string $value)
+    {
+        $this->headers->set($key, $value);
+        
+        return $this;
+    }
+    
+    /**
+     * @param array $headers
+     * @return $this
+     */
+    public function addHeaders(array $headers)
+    {
+        foreach ($headers as $key => $header) {
+            $this->addHeader($key, $header);
+        }
+        
+        return $this;
+    }
+    
     /**
      * @inheritDoc
      */
     public function sendContent()
     {
         $this->getSwooleResponse()->end($this->content);
-
+        
         return $this;
     }
-
+    
     /**
      * @inheritDoc
      */
@@ -91,7 +116,7 @@ class Response extends SymfonyResponse
     {
         $this->sendHeaders();
         $this->sendContent();
-
+        
         return $this;
     }
 }
