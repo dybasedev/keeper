@@ -75,6 +75,7 @@ class WebsocketServer extends HttpServer
     public function bindSwooleServerEvents($server)
     {
         $server->on('message', $this->processKernel->onMessage());
+        $server->on('close', $this->processKernel->onClose());
 
         if ($this->processKernel->customHandShake()) {
             $server->on('handshake', $this->processKernel->onHandShake());

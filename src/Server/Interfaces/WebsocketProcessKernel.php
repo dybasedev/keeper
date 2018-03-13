@@ -17,4 +17,5 @@ interface WebsocketProcessKernel extends HttpServerProcessKernel
     public function onMessage(): Closure;
     public function onHandShake(): Closure;
     public function onOpen(): Closure;
+    public function onClose(): Closure;
 }
