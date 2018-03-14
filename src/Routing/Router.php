@@ -61,6 +61,13 @@ class Router implements RouterInterface
         return $this;
     }
 
+    public function add($register)
+    {
+        $this->registers[] = $register;
+
+        return $this;
+    }
+
     /**
      * Load routes from route register
      *
@@ -69,8 +76,7 @@ class Router implements RouterInterface
     public function load()
     {
         foreach ($this->registers as $register) {
-            /** @var RouteRegister $registerInstance */
-            $registerInstance = new $register;
+            $registerInstance = $register instanceof RouteRegister ? $register : new $register;
             $registerInstance->register($this->routeCollector);
         }
 

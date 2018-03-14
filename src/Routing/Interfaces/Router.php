@@ -8,6 +8,7 @@
 
 namespace Dybasedev\Keeper\Routing\Interfaces;
 
+use Dybasedev\Keeper\Routing\RouteRegister;
 
 interface Router
 {
@@ -25,4 +26,11 @@ interface Router
      * @return $this
      */
     public function mount(array $data = null);
+
+    /**
+     * @param string|RouteRegister $register
+     *
+     * @return $this
+     */
+    public function add($register);
 }
