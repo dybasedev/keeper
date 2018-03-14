@@ -148,11 +148,15 @@ class KeeperHttpService implements HttpService
         // Load configuration
         $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
         
-        // Load http service routes
-        $this->router = $this->getRouter($config)->mount();
+        // Load router component
+        $this->router = $this->getRouter($config);
+        $this->container->instance(Router::class, $this->router);
         
         // Load Modules
         $this->loadModules($config->get('app.modules', []));
+
+        // Mount route
+        $this->router->mount();
     }
     
     public function onProcessBegin(Closure $callback)
