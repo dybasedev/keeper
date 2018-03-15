@@ -292,7 +292,7 @@ class KeeperHttpService implements HttpService
             
             // trigger: process end
             foreach ($this->processEndHooks as $hook) {
-                ($hook)($request, $keeperResponse);
+                ($hook)($keeperRequest, $keeperResponse);
             }
     
             unset($keeperRequest);
