@@ -191,7 +191,7 @@ class KeeperHttpService implements HttpService
             
             public function processEnd(Closure $callback)
             {
-                $this->delegation->onProcessBegin($callback);
+                $this->delegation->onProcessEnd($callback);
             }
             
         };
