@@ -9,6 +9,8 @@
 namespace Dybasedev\Keeper\Database;
 
 
+use Illuminate\Contracts\Container\Container;
+
 abstract class ConnectionManager
 {
     /**
@@ -22,6 +24,11 @@ abstract class ConnectionManager
     protected $connections;
 
     /**
+     * @var Container
+     */
+    protected $container;
+
+    /**
      * ConnectionManager constructor.
      *
      * @param array $config
@@ -29,6 +36,18 @@ abstract class ConnectionManager
     public function __construct(array $config)
     {
         $this->config = $config;
+    }
+
+    /**
+     * @param Container $container
+     *
+     * @return $this
+     */
+    public function setContainer(Container $container)
+    {
+        $this->container = $container;
+
+        return $this;
     }
 
     public function connection($name = null)

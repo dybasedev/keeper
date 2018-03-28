@@ -91,8 +91,8 @@ abstract class Connection extends BaseConnection
     }
 
     /**
-     * @param       $statement
-     * @param array $binder
+     * @param                $statement
+     * @param array|callable $binder
      *
      * @return mixed
      * @throws Throwable
@@ -153,11 +153,34 @@ abstract class Connection extends BaseConnection
     }
 
     /**
+     * @param string $modelName
+     * @param        $statement
+     * @param array  $binder
+     * @param null   $fetcher
+     *
+     * @return mixed
+     * @throws Throwable
+     */
+    public function selectModel(string $modelName, $statement, $binder = [], $fetcher = null)
+    {
+        return $this->process($statement, function (PDOStatement $prepared) use ($binder, $fetcher, $modelName) {
+            $this->bindValues($prepared, $binder);
+            $prepared->execute();
+
+            if (is_null($fetcher)) {
+                return $prepared->fetchAll(PDO::FETCH_CLASS, $modelName);
+            }
+
+            return ($fetcher)($prepared, $modelName);
+        });
+    }
+
+    /**
      * Get last insert id
      *
      * @param null $name
      *
-     * @return string
+     * @return string|int
      */
     public function lastInsertId($name = null)
     {
@@ -179,19 +202,11 @@ abstract class Connection extends BaseConnection
         for ($currentAttempt = 1; $currentAttempt <= $attempts; $currentAttempt++) {
             $this->beginTransaction();
 
-            // We'll simply execute the given callback within a try / catch block and if we
-            // catch any exception we can rollback this transaction so that none of this
-            // gets actually persisted to a database or stored in a permanent fashion.
             try {
                 return tap($callback($this), function () {
                     $this->commit();
                 });
-            }
-
-                // If we catch an exception we'll rollback this transaction and try again if we
-                // are not out of attempts. If we are out of attempts we will just throw the
-                // exception back out and let the developer handle an uncaught exceptions.
-            catch (Exception $e) {
+            } catch (Exception $e) {
                 $this->handleTransactionException(
                     $e, $currentAttempt, $attempts
                 );
@@ -320,9 +335,6 @@ abstract class Connection extends BaseConnection
      */
     public function rollBack($toLevel = null)
     {
-        // We allow developers to rollback to a certain transaction level. We will verify
-        // that this given transaction level is valid before attempting to rollback to
-        // that level. If it's not we will just return out and not attempt anything.
         $toLevel = is_null($toLevel)
             ? $this->transactions - 1
             : $toLevel;
@@ -331,9 +343,6 @@ abstract class Connection extends BaseConnection
             return;
         }
 
-        // Next, we will actually perform this rollback within this database and fire the
-        // rollback event. We will also set the current transaction level to the given
-        // level that was passed into this method so it will be right from here out.
         $this->performRollBack($toLevel);
 
         $this->transactions = $toLevel;

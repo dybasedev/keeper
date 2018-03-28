@@ -8,7 +8,6 @@
 
 namespace Dybasedev\Keeper\Database\SQL\Connections;
 
-
 use Dybasedev\Keeper\Database\SQL\Connection;
 use PDO;
 
@@ -27,7 +26,6 @@ class MySQLConnection extends Connection
                 $this->options['host'], $this->options['port'],
                 $this->options['database'], $this->options['charset']);
         }
-
 
         $pdo = new PDO($dsn, $this->options['username'], $this->options['password']);
 

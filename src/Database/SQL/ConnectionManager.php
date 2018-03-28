@@ -9,8 +9,8 @@
 namespace Dybasedev\Keeper\Database\SQL;
 
 use Dybasedev\Keeper\Database\ConnectionManager as BaseConnectionManager;
+use Dybasedev\Keeper\Database\Exceptions\DriverNotSupportException;
 use Dybasedev\Keeper\Database\SQL\Connections\MySQLConnection;
-use RuntimeException;
 
 class ConnectionManager extends BaseConnectionManager
 {
@@ -20,7 +20,11 @@ class ConnectionManager extends BaseConnectionManager
             case 'mysql':
                 return new MySQLConnection($this->config['connections'][$name]);
             default:
-                throw new RuntimeException();
+                if ($this->container && $this->container->bound($abstract = 'db.sql.driver:' . $name)) {
+                    return $this->container->make($abstract);
+                }
+
+                throw new DriverNotSupportException($name);
         }
     }
 }
