@@ -18,6 +18,8 @@ abstract class BaseModel
 
     protected $nativeAttributes = [];
 
+    protected $primaryKey = 'id';
+
     public function __get($name)
     {
         if (isset($this->attributeGetters[$name])) {
@@ -57,5 +59,13 @@ abstract class BaseModel
         }
 
         return $this->attributes;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrimaryKey(): string
+    {
+        return $this->primaryKey;
     }
 }
