@@ -161,7 +161,7 @@ abstract class Connection extends BaseConnection
      * @return mixed
      * @throws Throwable
      */
-    public function selectModel(string $modelName, $statement, $binder = [], $fetcher = null)
+    public function selectModels(string $modelName, $statement, $binder = [], $fetcher = null)
     {
         return $this->process($statement, function (PDOStatement $prepared) use ($binder, $fetcher, $modelName) {
             $this->bindValues($prepared, $binder);

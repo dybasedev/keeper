@@ -12,14 +12,27 @@ abstract class BaseModel
 {
     protected $attributes = [];
 
+    protected $attributeSetters = [];
+
+    protected $attributeGetters = [];
+
+    protected $nativeAttributes = [];
+
     public function __get($name)
     {
+        if (isset($this->attributeGetters[$name])) {
+            return ($this->attributeGetters[$name])($this->attributes[$name]);
+        }
         return $this->attributes[$name];
     }
 
     public function __set($name, $value)
     {
-        $this->attributes[$name] = $value;
+        if (isset($this->attributeSetters[$name])) {
+            ($this->attributeSetters[$name])($value);
+        } else {
+            $this->attributes[$name] = $value;
+        }
     }
 
     public function __isset($name)
@@ -32,5 +45,17 @@ abstract class BaseModel
         unset($this->attributes[$name]);
     }
 
+    public function getAttributes($native = true)
+    {
+        if ($native && $this->nativeAttributes) {
+            $attributes = [];
+            foreach ($this->nativeAttributes as $attribute) {
+                $attributes[$attribute] = $this->{$attribute};
+            }
 
+            return $this->attributes + $attributes;
+        }
+
+        return $this->attributes;
+    }
 }
