@@ -8,8 +8,7 @@
 
 namespace Dybasedev\Keeper\Database\Memory\Redis;
 
-
-use Dybasedev\Keeper\Module\Interfaces\ModuleProvider;
+use Dybasedev\KeeperContracts\Module\ModuleProvider;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Container\Container;
 

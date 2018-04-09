@@ -19,7 +19,8 @@
     "symfony/http-kernel": "^4.0",
     "illuminate/config": "^5.5",
     "symfony/console": "^4.0",
-    "phpunit/phpunit": "^7.0"
+    "phpunit/phpunit": "^7.0",
+    "dybasedev/keeper-contracts": "~1.0"
   },
   "require-dev": {
     "eaglewu/swoole-ide-helper": "dev-master"
