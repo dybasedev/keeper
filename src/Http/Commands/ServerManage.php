@@ -66,7 +66,7 @@ abstract class ServerManage extends Command
             $this->port = $port;
         }
 
-        if ($pidFile = $input->getOption('pid_file')) {
+        if ($pidFile = $input->getOption('pid')) {
             $this->pidFile = $this->options['pid_file'] = $pidFile;
         }
 
@@ -82,7 +82,7 @@ abstract class ServerManage extends Command
             $this->options['daemonize'] = false;
         }
 
-        if ($logFile = $input->getOption('log_file')) {
+        if ($logFile = $input->getOption('log')) {
             $this->options['log_file'] = $logFile;
         }
 
