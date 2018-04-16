@@ -67,7 +67,12 @@ abstract class ServerManage extends Command
         }
 
         if ($pidFile = $input->getOption('pid')) {
-            $this->pidFile = $this->options['pid_file'] = $pidFile;
+            $realpath = realpath($pidPath = dirname($pidFile));
+            if ($realpath === false) {
+                throw new InvalidArgumentException("Path ({$pidPath}) not exists.");
+            }
+
+            $this->pidFile = $this->options['pid_file'] = $realpath . DIRECTORY_SEPARATOR . pathinfo($pidFile, PATHINFO_BASENAME);
         }
 
         if (!$this->pidFile) {
@@ -167,12 +172,6 @@ abstract class ServerManage extends Command
 
     protected function startServer()
     {
-        if ($this->pidFile && !is_file($this->pidFile)) {
-            touch($this->pidFile);
-            // need realpath
-            $this->pidFile = realpath($this->pidFile);
-        }
-
         $this->output->writeln("keeper: Start server <bg=green>successful</>");
 
         ob_start();
