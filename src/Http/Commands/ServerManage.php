@@ -167,6 +167,12 @@ abstract class ServerManage extends Command
 
     protected function startServer()
     {
+        if ($this->pidFile && !is_file($this->pidFile)) {
+            touch($this->pidFile);
+            // need realpath
+            $this->pidFile = realpath($this->pidFile);
+        }
+
         $this->output->writeln("keeper: Start server <bg=green>successful</>");
 
         ob_start();
