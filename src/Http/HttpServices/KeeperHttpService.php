@@ -36,6 +36,11 @@ use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
+/**
+ * Class KeeperHttpService
+ *
+ * @package Dybasedev\Keeper\Http\HttpServices
+ */
 class KeeperHttpService implements HttpService
 {
     /**

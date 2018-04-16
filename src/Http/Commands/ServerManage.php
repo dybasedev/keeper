@@ -8,6 +8,11 @@
 
 namespace Dybasedev\Keeper\Http\Commands;
 
+use Closure;
+use Dybasedev\Keeper\Http\Interfaces\HttpService;
+use Dybasedev\Keeper\Http\ProcessKernels\KeeperKernel;
+use Dybasedev\Keeper\Server\HttpServer;
+use InvalidArgumentException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,6 +28,12 @@ abstract class ServerManage extends Command
     public $pidFile;
 
     public $options = [];
+
+    protected $serverInstanceCreator;
+
+    protected $processKernelProvider;
+
+    protected $httpService;
 
     /**
      * @var OutputInterface
@@ -90,32 +101,68 @@ abstract class ServerManage extends Command
         }
     }
 
-    public function setHandler($handler)
+    public function setServerInstanceCreator(Closure $creator)
     {
-        if ($handler instanceof Kernel) {
-            $this->handler = $handler;
+        $this->serverInstanceCreator = $creator;
 
-            return $this;
-        }
+        return $this;
+    }
 
-        if (is_file($handler)) {
-            $this->handler = require $handler;
+    /**
+     * @param Closure $processKernelProvider
+     *
+     * @return ServerManage
+     */
+    public function setProcessKernelProvider(Closure $processKernelProvider)
+    {
+        $this->processKernelProvider = $processKernelProvider;
 
-            return $this;
-        }
+        return $this;
+    }
 
-        throw new \InvalidArgumentException();
+    public function service($service)
+    {
+        $this->httpService = $service;
+
+        return $this;
     }
 
     /**
      * @param null $host
      * @param null $port
      *
-     * @return \Dybasedev\Keeper\Server\Server|Server
+     * @return HttpServer
      */
     protected function createServerInstance($host = null, $port = null)
     {
-        return (new Server($host ?: $this->host, $port ?: $this->port))->setOptions($this->options);
+        if (!$this->httpService) {
+            throw new InvalidArgumentException('The HTTP service instance is necessary.');
+        }
+
+        $service = $this->httpService;
+        if ($service instanceof Closure) {
+            $service = ($service)();
+        }
+
+        if ($this->serverInstanceCreator) {
+            return ($this->serverInstanceCreator)();
+        }
+
+        $server = new HttpServer($this->createProcessKernel($service));
+
+        $host = $host ?: $this->host;
+        $port = $port ?: $this->port;
+
+        return $server->host($host ?: '0.0.0.0')->port($port ?: 11780)->setting($this->options);
+    }
+
+    protected function createProcessKernel(HttpService $service)
+    {
+        if ($this->processKernelProvider) {
+            return ($this->processKernelProvider)($service);
+        }
+
+        return new KeeperKernel($service);
     }
 
     protected function startServer()
@@ -123,19 +170,10 @@ abstract class ServerManage extends Command
         $this->output->writeln("keeper: Start server <bg=green>successful</>");
 
         ob_start();
-        $this->createServerInstance()->setHandler($this->getHandler())->start();
+        $this->createServerInstance()->start();
         ob_end_clean();
 
         return 0;
-    }
-
-    public function getHandler()
-    {
-        if ($this->handler instanceof \Closure) {
-            $this->handler = ($this->handler)();
-        }
-
-        return $this->handler;
     }
 
     protected function stopServer()
