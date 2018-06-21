@@ -47,42 +47,42 @@ class KeeperHttpService implements HttpService
      * @var Container
      */
     protected $container;
-    
+
     /**
      * @var string
      */
     protected $basePath;
-    
+
     /**
      * @var array
      */
     protected $paths = [];
-    
+
     /**
      * @var Router
      */
     protected $router;
-    
+
     /**
      * @var array|DestructibleModuleProvider[]
      */
     protected $destructibleModules = [];
-    
+
     /**
      * @var array
      */
     protected $processBeginHooks = [];
-    
+
     /**
      * @var array
      */
     protected $processEndHooks = [];
-    
+
     /**
      * @var ExceptionHandler
      */
     protected $exceptionHandler;
-    
+
     /**
      * BaseKernel constructor.
      *
@@ -91,38 +91,38 @@ class KeeperHttpService implements HttpService
     public function __construct(array $paths)
     {
         $this->paths = array_map('realpath', $paths);;
-        
+
         if (isset($this->paths['base'])) {
             $this->basePath = $this->paths['base'];
         }
-        
+
         if (!$this->basePath) {
             throw new InvalidArgumentException('Invalid base path.');
         }
     }
-    
+
     public function basePath($path = null): string
     {
         if ($path) {
             return $this->basePath . DIRECTORY_SEPARATOR . trim($path, '/');
         }
-        
+
         return $this->basePath;
     }
-    
+
     public function path($name = null)
     {
         if (is_null($name)) {
             return $this->paths;
         }
-        
+
         if (isset($this->paths[$name])) {
             return $this->paths[$name];
         }
-        
+
         return $this->basePath($name);
     }
-    
+
     /**
      * @param ConfigurationLoader $config
      *
@@ -132,48 +132,48 @@ class KeeperHttpService implements HttpService
     {
         return (new KeeperRouter($config->get('router.registers')))->setContainer($this->container);
     }
-    
+
     public function init(SwooleHttpServer $server, $workerId)
     {
         // Create lifecycle container
         $this->container = new LifecycleContainer();
-        
+
         // Bind context data to container
         $this->container['server'] = $server;
         $this->container['worker'] = $workerId;
-        
+
         // Create hook delegation
         $this->container->instance(WorkerHookDelegation::class, $this->createWorkerHookDelegation());
-        
+
         // Bind exception handler
         if ($this->exceptionHandler) {
             $this->container->instance(ExceptionHandler::class, $this->exceptionHandler);
         }
-        
+
         // Load configuration
         $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
-        
+
         // Load router component
         $this->router = $this->getRouter($config);
         $this->container->instance(Router::class, $this->router);
-        
+
         // Load Modules
         $this->loadModules($config->get('app.modules', []));
 
         // Mount route
         $this->router->mount();
     }
-    
+
     public function onProcessBegin(Closure $callback)
     {
         $this->processBeginHooks[] = $callback;
     }
-    
+
     public function onProcessEnd(Closure $callback)
     {
         $this->processEndHooks[] = $callback;
     }
-    
+
     /**
      * @return WorkerHookDelegation
      */
@@ -181,49 +181,49 @@ class KeeperHttpService implements HttpService
     {
         return new class($this) implements WorkerHookDelegation
         {
-            
+
             private $delegation;
-            
+
             public function __construct(KeeperHttpService $delegation)
             {
                 $this->delegation = $delegation;
             }
-            
+
             public function processBegin(Closure $callback)
             {
                 $this->delegation->onProcessBegin($callback);
             }
-            
+
             public function processEnd(Closure $callback)
             {
                 $this->delegation->onProcessEnd($callback);
             }
-            
+
         };
     }
-    
+
     protected function loadModules($modules)
     {
         /** @var ModuleProvider[] $moduleProviders */
         $moduleProviders = [];
-        
+
         foreach ($modules as $module) {
             $moduleProvider = new $module;
             if ($moduleProvider instanceof ModuleProvider) {
                 if ($moduleProvider instanceof DestructibleModuleProvider) {
                     $this->destructibleModules[] = $moduleProvider;
                 }
-                
+
                 $moduleProvider->register($this->container);
                 $moduleProviders[] = $moduleProvider;
             }
         }
-        
+
         foreach ($moduleProviders as $provider) {
             $provider->mount($this->container);
         }
     }
-    
+
     /**
      * Handle Http request and return processed result
      *
@@ -235,7 +235,7 @@ class KeeperHttpService implements HttpService
     {
         try {
             list($routeInformation, $parameters) = $this->findRoute($request);
-            
+
             return (new Pipeline($this->container))
                 ->through($routeInformation['middlewares'])
                 ->send($request)
@@ -243,27 +243,27 @@ class KeeperHttpService implements HttpService
                     if ($routeInformation['action'] instanceof Closure) {
                         return $this->container->call($routeInformation['action'], $parameters);
                     }
-                    
+
                     list($controller, $action) = $routeInformation['action'];
                     $controllerInstance = new $controller;
-                    
+
                     if ($controllerInstance instanceof KeeperBaseController) {
                         $controllerInstance->setContainer($this->container);
                         $controllerInstance->setRequest($request);
                     }
-                    
+
                     return $this->container->call([$controllerInstance, $action], $parameters);
                 });
-            
+
         } catch (Throwable $exception) {
             if ($this->exceptionHandler) {
-                return $this->exceptionHandler->handle($exception);
+                return $this->exceptionHandler->handle($exception, $request);
             }
-            
+
             return new Response((string)$exception, 500);
         }
     }
-    
+
     public function findRoute(Request $request)
     {
         $route = $this->router->dispatch($request->getMethod(), '/' . trim($request->getPathInfo(), '/'));
@@ -275,48 +275,50 @@ class KeeperHttpService implements HttpService
             case Dispatcher::FOUND:
                 return [$route[1], $route[2] ?? []];
         }
-        
+
         throw new RuntimeException();
     }
-    
+
     public function process(SwooleHttpRequest $request, SwooleHttpResponse $response)
     {
         try {
             $keeperRequest = Request::createFromSwooleRequest($request);
-            
+
             // trigger: process begin
             foreach ($this->processBeginHooks as $hook) {
                 ($hook)($keeperRequest);
             }
-            
+
             $keeperResponse = $this->handle($keeperRequest);
-            
+
             $this->prepareResponse($keeperResponse)
-                ->setSwooleResponse($response)
-                ->send();
-            
+                 ->setSwooleResponse($response)
+                 ->send();
+
             // trigger: process end
             foreach ($this->processEndHooks as $hook) {
                 ($hook)($keeperRequest, $keeperResponse);
             }
-    
+
             unset($keeperRequest);
             unset($keeperResponse);
             unset($hook);
-            
+
             gc_collect_cycles();
         } catch (Throwable $exception) {
-            //
+            if ($this->exceptionHandler) {
+                $this->exceptionHandler->handle($exception, $keeperRequest);
+            }
         }
     }
-    
+
     public function setExceptionHandler(ExceptionHandler $handler)
     {
         $this->exceptionHandler = $handler;
-        
+
         return $this;
     }
-    
+
     protected function prepareResponse($response)
     {
         if (!$response instanceof Response) {
@@ -329,10 +331,10 @@ class KeeperHttpService implements HttpService
                 $response = new Response($response);
             }
         }
-        
+
         return $response;
     }
-    
+
     public function destroy(SwooleHttpServer $server, $workerId)
     {
         foreach ($this->destructibleModules as $module) {
