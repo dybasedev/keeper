@@ -123,6 +123,13 @@ class KeeperHttpService implements HttpService
         return $this->basePath($name);
     }
 
+    public function setContainer(Container $container)
+    {
+        $this->container = $container;
+
+        return $this;
+    }
+
     /**
      * @param ConfigurationLoader $config
      *
@@ -136,7 +143,9 @@ class KeeperHttpService implements HttpService
     public function init(SwooleHttpServer $server, $workerId)
     {
         // Create lifecycle container
-        $this->container = new LifecycleContainer();
+        if (!$this->container) {
+            $this->container = new LifecycleContainer();
+        }
 
         // Bind context data to container
         $this->container['server'] = $server;
