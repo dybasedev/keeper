@@ -23,7 +23,7 @@ use InvalidArgumentException;
 use Dybasedev\Keeper\Http\Interfaces\HttpService;
 use Dybasedev\Keeper\Routing\Router as KeeperRouter;
 use Dybasedev\Keeper\Routing\Interfaces\Router;
-use Illuminate\Contracts\Container\Container;
+use Psr\Container\ContainerInterface as Container;
 use Dybasedev\Keeper\Http\Response;
 use FastRoute\Dispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -241,7 +241,7 @@ class KeeperHttpService implements HttpService
                 ->send($request)
                 ->then(function (Request $request) use ($routeInformation, $parameters) {
                     if ($routeInformation['action'] instanceof Closure) {
-                        return $this->container->call($routeInformation['action'], $parameters);
+                        return call_user_func_array($routeInformation['action'], $parameters);
                     }
 
                     list($controller, $action) = $routeInformation['action'];
@@ -252,7 +252,7 @@ class KeeperHttpService implements HttpService
                         $controllerInstance->setRequest($request);
                     }
 
-                    return $this->container->call([$controllerInstance, $action], $parameters);
+                    return call_user_func_array([$controllerInstance, $action], $parameters);
                 });
 
         } catch (Throwable $exception) {

@@ -8,12 +8,13 @@
 
 namespace Dybasedev\Keeper\Routing;
 
+use Dybasedev\Keeper\Module\LifecycleContainer;
 use Dybasedev\Keeper\Routing\Interfaces\Router as RouterInterface;
 use FastRoute\DataGenerator\GroupCountBased;
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector as FastRouteCollector;
 use FastRoute\RouteParser\Std;
-use Illuminate\Contracts\Container\Container;
+use Psr\Container\ContainerInterface as Container;
 
 class Router implements RouterInterface
 {
@@ -33,7 +34,7 @@ class Router implements RouterInterface
     protected $dispatcher;
 
     /**
-     * @var Container
+     * @var Container|LifecycleContainer
      */
     protected $container;
 

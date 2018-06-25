@@ -8,8 +8,7 @@
 
 namespace Dybasedev\Keeper\Http;
 
-
-use Illuminate\Contracts\Container\Container;
+use Psr\Container\ContainerInterface as Container;
 
 abstract class KeeperBaseController
 {

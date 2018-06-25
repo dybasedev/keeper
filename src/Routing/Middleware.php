@@ -9,7 +9,7 @@
 namespace Dybasedev\Keeper\Routing;
 
 use Closure;
-use Illuminate\Contracts\Container\Container;
+use Psr\Container\ContainerInterface as Container;
 
 abstract class Middleware
 {

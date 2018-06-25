@@ -10,13 +10,14 @@ namespace Dybasedev\Keeper\Routing;
 
 
 use Closure;
+use Dybasedev\Keeper\Module\LifecycleContainer;
 use FastRoute\RouteCollector as FastRouteCollector;
-use Illuminate\Contracts\Container\Container;
+use Psr\Container\ContainerInterface as Container;
 
 class RouteCollector
 {
     /**
-     * @var Container
+     * @var Container|LifecycleContainer
      */
     protected $container;
 
@@ -70,7 +71,7 @@ class RouteCollector
 
         if ($middlewares) {
             foreach ($middlewares as $middleware) {
-                if (!$this->container->bound($middleware)) {
+                if (!$this->container->has($middleware)) {
                     $this->container->instance($middleware, new $middleware($this->container));
                 }
             }

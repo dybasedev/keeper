@@ -12,8 +12,6 @@
   "require": {
     "psr/container": "^1.0",
     "nikic/fast-route": "^1.2",
-    "illuminate/container": "^5.5",
-    "illuminate/database": "^5.5",
     "illuminate/pipeline": "^5.5",
     "symfony/http-foundation": "^4.0",
     "symfony/http-kernel": "^4.0",
