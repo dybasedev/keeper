@@ -18,11 +18,10 @@
     "illuminate/config": "^5.5",
     "symfony/console": "^4.0",
     "phpunit/phpunit": "~6.0",
-    "dybasedev/keeper-contracts": "~1.0"
+    "dybasedev/keeper-contracts": "~2.0"
   },
   "require-dev": {
-    "eaglewu/swoole-ide-helper": "dev-master",
-    "dybasedev/database": "dev-master"
+    "eaglewu/swoole-ide-helper": "dev-master"
   },
   "autoload": {
     "psr-4": {
