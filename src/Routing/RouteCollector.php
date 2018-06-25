@@ -10,14 +10,13 @@ namespace Dybasedev\Keeper\Routing;
 
 
 use Closure;
-use Dybasedev\Keeper\Module\LifecycleContainer;
+use Dybasedev\KeeperContracts\Module\Container;
 use FastRoute\RouteCollector as FastRouteCollector;
-use Psr\Container\ContainerInterface as Container;
 
 class RouteCollector
 {
     /**
-     * @var Container|LifecycleContainer
+     * @var Container
      */
     protected $container;
 

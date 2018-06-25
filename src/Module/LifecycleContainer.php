@@ -9,11 +9,11 @@
 namespace Dybasedev\Keeper\Module;
 
 use Dybasedev\Keeper\Module\Exceptions\ConflictException;
+use Dybasedev\KeeperContracts\Module\Container;
 use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class LifecycleContainer implements ContainerInterface
+class LifecycleContainer implements Container
 {
     protected $instances = [];
     

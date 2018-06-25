@@ -23,7 +23,7 @@ use InvalidArgumentException;
 use Dybasedev\Keeper\Http\Interfaces\HttpService;
 use Dybasedev\Keeper\Routing\Router as KeeperRouter;
 use Dybasedev\Keeper\Routing\Interfaces\Router;
-use Psr\Container\ContainerInterface as Container;
+use Dybasedev\KeeperContracts\Module\Container;
 use Dybasedev\Keeper\Http\Response;
 use FastRoute\Dispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
