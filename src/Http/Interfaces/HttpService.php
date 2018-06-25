@@ -34,5 +34,13 @@ interface HttpService
      */
     public function process(Request $request, Response $response);
 
+    /**
+     * The method will be called before server worker stop
+     *
+     * @param SwooleHttpServer $server
+     * @param                  $workerId
+     *
+     * @return mixed
+     */
     public function destroy(SwooleHttpServer $server, $workerId);
 }

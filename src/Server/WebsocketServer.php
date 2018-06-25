@@ -57,33 +57,24 @@ class WebsocketServer extends HttpServer
         return $instance;
     }
 
-    /**
-     * @param SwooleServer|SwooleHttpServer|SwooleWebsocketServer $server
-     */
-    protected function bindRequestHandler($server)
+    public function getBinders(): array
     {
-        if ($this->enableHttpRequestProcess) {
-            $server->on('request', $this->processKernel->onRequest());
-        }
-    }
+        $binders = parent::getBinders();
 
-    /**
-     * @param SwooleHttpServer|SwooleServer|SwooleWebsocketServer $server
-     *
-     * @return HttpServer|WebsocketServer
-     */
-    public function bindSwooleServerEvents($server)
-    {
-        $server->on('message', $this->processKernel->onMessage());
-        $server->on('close', $this->processKernel->onClose());
+        if (!$this->enableHttpRequestProcess) {
+            unset($binders['request']);
+        }
+
+        $binders['message'] = $this->processKernel->onMessage();
+        $binders['close'] = $this->processKernel->onClose();
 
         if ($this->processKernel->customHandShake()) {
-            $server->on('handshake', $this->processKernel->onHandShake());
+            $binders['handshake'] = $this->processKernel->onHandShake();
         } else {
-            $server->on('open', $this->processKernel->onOpen());
+            $binders['open'] = $this->processKernel->onOpen();
         }
 
-        return parent::bindSwooleServerEvents($server);
+        return $binders;
     }
 
 

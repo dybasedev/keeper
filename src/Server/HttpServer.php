@@ -54,33 +54,17 @@ class HttpServer extends AbstractServer
         return $instance;
     }
 
-    /**
-     * Bind events
-     *
-     * @param SwooleServer|SwooleHttpServer|SwooleWebsocketServer $server
-     *
-     * @return $this
-     */
-    public function bindSwooleServerEvents($server)
+    public function getBinders(): array
     {
-        $server->on('start', $this->processKernel->onStart());
-        $server->on('shutdown', $this->processKernel->onShutdown());
-        $server->on('workerStart', $this->processKernel->onWorkerStart());
-        $server->on('workerStop', $this->processKernel->onWorkerStop());
-        $server->on('workerError', $this->processKernel->onWorkerError());
-        $server->on('managerStart', $this->processKernel->onManagerStart());
-        $server->on('managerStop', $this->processKernel->onManagerStop());
-
-        $this->bindRequestHandler($server);
-
-        return $this;
-    }
-
-    /**
-     * @param SwooleServer|SwooleHttpServer|SwooleWebsocketServer $server
-     */
-    protected function bindRequestHandler($server)
-    {
-        $server->on('request', $this->processKernel->onRequest());
+        return [
+            'start'        => $this->processKernel->onStart(),
+            'shutdown'     => $this->processKernel->onShutdown(),
+            'workerStart'  => $this->processKernel->onWorkerStart(),
+            'workerStop'   => $this->processKernel->onManagerStop(),
+            'workerError'  => $this->processKernel->onWorkerError(),
+            'managerStart' => $this->processKernel->onManagerStart(),
+            'managerStop'  => $this->processKernel->onManagerStop(),
+            'request'      => $this->processKernel->onRequest(),
+        ];
     }
 }

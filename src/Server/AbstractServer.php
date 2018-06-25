@@ -105,7 +105,32 @@ abstract class AbstractServer
      *
      * @return $this
      */
-    abstract public function bindSwooleServerEvents($server);
+    public function bindSwooleServerEvents($server)
+    {
+        $bindersMap = $this->getBinders();
+
+        foreach ($bindersMap as $event => $handler) {
+            $server->on($event, $handler);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get Swoole server event bind map.
+     *
+     * Example:
+     *
+     * ```
+     * return [
+     *     'start' => function () {},
+     *     'stop' => function () {},
+     * ];
+     * ```
+     *
+     * @return array
+     */
+    abstract public function getBinders(): array;
 
     /**
      * Start server
@@ -122,5 +147,15 @@ abstract class AbstractServer
 
         // Start
         $this->serverInstance->start();
+    }
+
+    /**
+     * Get process kernel
+     *
+     * @return ServerProcessKernel
+     */
+    public function getProcessKernel()
+    {
+        return $this->processKernel;
     }
 }
