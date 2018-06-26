@@ -160,7 +160,11 @@ class KeeperHttpService implements HttpService
         }
 
         // Load configuration
-        $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
+        if (!$this->container->has(Configuration::class)) {
+            $this->container->instance(Configuration::class, $config = new ConfigurationLoader($this->path('config')));
+        } else {
+            $config = $this->container->get(Configuration::class);
+        }
 
         // Load router component
         $this->router = $this->getRouter($config);
