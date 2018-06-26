@@ -9,9 +9,8 @@
 namespace Dybasedev\Keeper\Module;
 
 use Dybasedev\Keeper\Module\Exceptions\ConflictException;
+use Dybasedev\Keeper\Module\Exceptions\NotFoundException;
 use Dybasedev\KeeperContracts\Module\Container;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 
 class LifecycleContainer implements Container
 {
@@ -25,12 +24,31 @@ class LifecycleContainer implements Container
     
     public function get($id)
     {
-        // TODO: Implement get() method.
+        if (isset($this->instances[$id])) {
+            return $this->instances[$id];
+        }
+
+        if (!isset($this->bindings[$id])) {
+            throw new NotFoundException();
+        }
+
+        $instance = call_user_func_array($this->bindings[$id], [$this]);
+
+        if (isset($this->singletons[$id])) {
+            $this->instances[$id] = $instance;
+        }
+
+        return $instance;
     }
 
     public function has($id)
     {
-        // TODO: Implement has() method.
+        return isset($this->bindings[$id]);
+    }
+
+    public function remove($id)
+    {
+        unset($this->immutables[$id], $this->singletons[$id], $this->instances[$id], $this->bindings[$id]);
     }
 
     /**

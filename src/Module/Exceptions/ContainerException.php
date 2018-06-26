@@ -9,7 +9,9 @@
 namespace Dybasedev\Keeper\Module\Exceptions;
 
 
-class ContainerException extends ModuleBaseException
+use Psr\Container\ContainerExceptionInterface;
+
+class ContainerException extends ModuleBaseException implements ContainerExceptionInterface
 {
 
 }
