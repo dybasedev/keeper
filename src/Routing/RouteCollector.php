@@ -126,6 +126,10 @@ class RouteCollector
         ($callback)($this);
 
         array_pop($this->groupStack);
+
+        // Clear
+        $this->currentGroupAttribute = null;
+
     }
 
     public function getData()
